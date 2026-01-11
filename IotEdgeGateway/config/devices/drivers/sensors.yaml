@@ -1,0 +1,18 @@
+sensors:
+  - id: temp_1
+    type: temperature
+    protocol: modbus
+    modbus:
+      unit_id: 1
+      register: 30001
+      scale: 0.1
+      poll_ms: 1000
+
+  - id: hum_1
+    type: humidity
+    protocol: modbus
+    modbus:
+      unit_id: 1
+      register: 30002
+      scale: 0.1
+      poll_ms: 1000

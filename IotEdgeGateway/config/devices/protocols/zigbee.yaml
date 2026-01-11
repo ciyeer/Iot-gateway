@@ -1,0 +1,7 @@
+zigbee:
+  adapter: z2m  # z2m | native
+  serial:
+    device: /dev/ttyUSB1
+    baudrate: 115200
+  pan_id: 0x1a62
+  channel: 11

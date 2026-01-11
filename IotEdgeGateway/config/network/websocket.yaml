@@ -1,0 +1,8 @@
+listen:
+  host: 0.0.0.0
+  port: 9002
+  path: /ws
+
+limits:
+  max_connections: 128
+  max_message_bytes: 1048576

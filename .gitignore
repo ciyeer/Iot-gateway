@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Prerequisites
 *.d
 
@@ -39,3 +40,52 @@
 
 # debug information files
 *.dwo
+=======
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# CMake / Ninja build outputs
+build/
+build-*/
+build-wsl/
+build-wsl-*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+*.ninja
+.ninja_*
+Testing/
+CTestTestfile.cmake
+
+# CMake Tools (VS Code) extra folders
+**/.cmake/api/v1/reply/
+
+# Binaries / libs
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+*.exe
+
+# Logs / runtime data
+*.log
+logs/
+data/
+TMP/
+tmp/
+
+# Frontend (Vite/Vue)
+node_modules/
+dist/
+.vite/
+
+# Misc
+*.swp
+>>>>>>> chore: initial import

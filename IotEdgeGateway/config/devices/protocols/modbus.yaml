@@ -1,0 +1,13 @@
+modbus:
+  mode: rtu  # rtu | tcp
+  rtu:
+    device: /dev/ttyUSB0
+    baudrate: 9600
+    parity: N
+    data_bits: 8
+    stop_bits: 1
+    timeout_ms: 500
+  tcp:
+    host: 127.0.0.1
+    port: 502
+    timeout_ms: 500

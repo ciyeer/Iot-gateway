@@ -1,0 +1,7 @@
+actuators:
+  - id: relay_1
+    type: relay
+    protocol: modbus
+    modbus:
+      unit_id: 1
+      coil: 1
