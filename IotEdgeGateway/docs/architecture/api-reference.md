@@ -1,32 +1,64 @@
-# API Reference (Placeholder)
+# API Reference
 
-This repository contains Web UI and service code. Define concrete endpoints and message formats here once the gateway executable is wired.
+本文档描述当前网关程序已实现的 HTTP/WebSocket 接口，便于联调与长期维护。
 
-## HTTP API (Default)
-- Base path: `/api`
-- Listen: `0.0.0.0:8080`
+## HTTP API
 
-Suggested endpoints (to implement/confirm):
-- `GET /api/health`
-- `GET /api/version`
-- `GET /api/devices`
-- `GET /api/devices/{id}`
-- `POST /api/devices/{id}/commands`
+- 监听地址：默认 `http://0.0.0.0:8000`
+- Base path：`/api`
+- Content-Type：响应为 `application/json`
 
-## WebSocket (Default)
-- Path: `/ws`
-- Listen: `0.0.0.0:9002`
+### GET /api/health
 
-Suggested message envelopes:
-- `{ "type": "telemetry", "payload": {...} }`
-- `{ "type": "event", "payload": {...} }`
-- `{ "type": "command_result", "payload": {...} }`
+用途：健康检查。
 
-## MQTT (If Enabled)
-- Broker: `127.0.0.1:1883`
-- Topic prefix: `iotgw/`
+响应：
+- 200
 
-Suggested topics:
-- `iotgw/telemetry`
-- `iotgw/status`
-- `iotgw/commands`
+示例：
+```json
+{"status":"ok"}
+```
+
+### GET /api/version
+
+用途：查询网关版本。
+
+响应：
+- 200
+
+示例：
+```json
+{"version":"0.1.0"}
+```
+
+说明：当前版本号为服务端固定返回值，后续应改为读取 UpdateManager/VersionController 的实际版本。
+
+### 其他路径
+
+- 未实现的路径统一返回：404 + `Not Found`
+
+## WebSocket
+
+- URL：默认 `ws://0.0.0.0:8000/ws`
+- 协议：WebSocket（当前实现为“原样回显”）
+
+### 行为
+
+- 客户端发送任意文本消息后，服务端会将消息内容原样返回（echo）。
+
+### 示例
+
+请求：
+```text
+hello
+```
+
+响应：
+```text
+hello
+```
+
+## MQTT
+
+- 目前仅预留接入位置，尚未在网关进程内启用 MQTT 连接与订阅/发布逻辑。

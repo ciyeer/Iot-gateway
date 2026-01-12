@@ -2,13 +2,11 @@
 
 #include <cctype>
 #include <cstdint>
-#include <filesystem>
+#include "core/common/utils/std_compat.hpp"
 #include <fstream>
 #include <functional>
 #include <iterator>
-#include <optional>
 #include <string>
-#include <string_view>
 #include <system_error>
 #include <utility>
 
@@ -72,7 +70,7 @@ public:
 
   std::optional<std::string> GetCurrentVersion() const {
     const auto v = ReadTextFileTrimmed(CurrentVersionFile());
-    if (v.has_value() && !v->empty()) return v;
+    if (v && !v->empty()) return v;
     if (!opt_.default_current_version.empty()) return opt_.default_current_version;
     return std::nullopt;
   }
@@ -83,11 +81,11 @@ public:
 
   bool IsUpdateAvailable(std::string_view candidate_version) const {
     const auto cur = GetCurrentVersion();
-    if (!cur.has_value()) return true;
+    if (!cur) return true;
 
     const auto a = ParseSemVer(*cur);
     const auto b = ParseSemVer(candidate_version);
-    if (a.has_value() && b.has_value()) return CompareSemVer(*a, *b) < 0;
+    if (a && b) return CompareSemVer(*a, *b) < 0;
 
     if (opt_.allow_non_semver) return std::string(candidate_version) != *cur;
 
@@ -96,7 +94,7 @@ public:
 
   std::optional<StagedUpdate> GetStaged() const {
     const auto meta = ReadTextFileTrimmed(StagedMetaFile());
-    if (!meta.has_value() || meta->empty()) return std::nullopt;
+    if (!meta || meta->empty()) return std::nullopt;
 
     StagedUpdate s;
     std::string_view in = *meta;
@@ -171,7 +169,7 @@ public:
     if (!apply_fn) return false;
 
     const auto staged = GetStaged();
-    if (!staged.has_value()) return false;
+    if (!staged) return false;
 
     std::error_code ec;
     if (!std::filesystem::exists(staged->package_path, ec) || ec) return false;
@@ -213,6 +211,7 @@ private:
     if (!ifs) return std::nullopt;
     std::string s((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
     const auto t = TrimCopy(s);
+    if (t.empty()) return std::nullopt;
     return std::string(t);
   }
 

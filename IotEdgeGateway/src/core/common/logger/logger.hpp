@@ -2,11 +2,10 @@
 
 #include <chrono>
 #include <cstdint>
-#include <filesystem>
+#include "core/common/utils/std_compat.hpp"
 #include <memory>
 #include <mutex>
 #include <string>
-#include <string_view>
 
 namespace iotgw::core::common::log {
 

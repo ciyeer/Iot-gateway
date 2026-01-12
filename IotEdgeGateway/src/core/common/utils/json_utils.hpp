@@ -2,7 +2,7 @@
 
 #include <initializer_list>
 #include <string>
-#include <string_view>
+#include "core/common/utils/std_compat.hpp"
 #include <utility>
 
 namespace iotgw::core::common::json {

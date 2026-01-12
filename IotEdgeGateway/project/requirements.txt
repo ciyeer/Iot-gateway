@@ -1,2 +1,0 @@
-# Placeholder for python tooling in this repository.
-# Add runtime/dev dependencies when python utilities are introduced.

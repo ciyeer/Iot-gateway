@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(IotEdgeGateway VERSION 0.1.0 LANGUAGES CXX)
+project(IotEdgeGateway VERSION 0.1.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,6 +14,12 @@ add_library(iotgw_common STATIC
 
 add_executable(iotgw_gateway
   src/gateway/main.cpp
+  src/vendor/mongoose/mongoose.c
+)
+
+target_include_directories(iotgw_gateway
+  PRIVATE
+    ${PROJECT_SOURCE_DIR}/src/vendor/mongoose
 )
 
 target_link_libraries(iotgw_gateway
@@ -28,4 +34,5 @@ target_include_directories(iotgw_common
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
   target_compile_options(iotgw_common PRIVATE -Wall -Wextra -Wpedantic)
+  target_link_libraries(iotgw_common PUBLIC stdc++fs)
 endif()

@@ -1,7 +1,7 @@
 #include "core/common/config/config_manager.hpp"
 
 #include <string>
-#include <string_view>
+#include "core/common/utils/std_compat.hpp"
 #include <vector>
 
 namespace iotgw::core::common::config {

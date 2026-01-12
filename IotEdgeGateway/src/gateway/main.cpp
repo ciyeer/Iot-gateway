@@ -1,17 +1,16 @@
 #include <atomic>
 #include <csignal>
 #include <cstdint>
-#include <filesystem>
+#include "core/common/utils/std_compat.hpp"
 #include <iostream>
-#include <optional>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "core/common/config/config_manager.hpp"
 #include "core/common/logger/logger.hpp"
 #include "core/common/utils/time_utils.hpp"
 #include "services/system_services/update/update_manager.hpp"
+#include "services/web_services/websocket/websocket_server.hpp"
 
 namespace {
 
@@ -62,18 +61,18 @@ Args ParseArgs(int argc, char** argv) {
 
     if (a == "--config") {
       const auto v = take_value(a);
-      if (v.has_value()) out.config_kv = std::filesystem::path(std::string(*v));
+      if (v) out.config_kv = std::filesystem::path(std::string(*v));
     } else if (a == "--log-file") {
       const auto v = take_value(a);
-      if (v.has_value()) out.log_file = std::filesystem::path(std::string(*v));
+      if (v) out.log_file = std::filesystem::path(std::string(*v));
     } else if (a == "--log-level") {
       const auto v = take_value(a);
-      if (v.has_value()) out.log_level = std::string(*v);
+      if (v) out.log_level = std::string(*v);
     } else if (a == "--print-version") {
       out.print_version = true;
     } else if (a == "--set-version") {
       const auto v = take_value(a);
-      if (v.has_value()) out.set_version = std::string(*v);
+      if (v) out.set_version = std::string(*v);
     }
   }
   return out;
@@ -90,10 +89,12 @@ int main(int argc, char** argv) {
   iotgw::core::common::config::ConfigManager cfg;
   if (!args.config_kv.empty()) {
     if (cfg.LoadKeyValueFile(args.config_kv)) {
-      if (const auto lf = cfg.GetString("log_file"); lf.has_value() && !lf->empty()) {
+      const auto lf = cfg.GetString("log_file");
+      if (lf && !lf->empty()) {
         args.log_file = *lf;
       }
-      if (const auto ll = cfg.GetString("log_level"); ll.has_value() && !ll->empty()) {
+      const auto ll = cfg.GetString("log_level");
+      if (ll && !ll->empty()) {
         args.log_level = *ll;
       }
     }
@@ -107,14 +108,15 @@ int main(int argc, char** argv) {
   auto sink = std::make_shared<iotgw::core::common::log::FileSink>(args.log_file);
   auto logger = std::make_shared<iotgw::core::common::log::Logger>(sink);
 
-  if (const auto lvl = ParseLogLevel(args.log_level); lvl.has_value()) {
+  const auto lvl = ParseLogLevel(args.log_level);
+  if (lvl) {
     logger->SetLevel(*lvl);
   }
 
   iotgw::services::system_services::update::UpdateManager update_mgr(
       iotgw::services::system_services::update::UpdateManager::Options{}, logger);
 
-  if (args.set_version.has_value()) {
+  if (args.set_version) {
     if (!update_mgr.SetCurrentVersion(*args.set_version)) {
       std::cerr << "failed to set version\n";
       return 2;
@@ -133,16 +135,32 @@ int main(int argc, char** argv) {
   const auto v = update_mgr.GetCurrentVersion().value_or("unknown");
   logger->Info(std::string("current_version=") + v);
 
+  // Web Server (Mongoose)
+  iotgw::services::web_services::websocket::MongooseServer::Options web_opt;
+  const auto addr = cfg.GetString("http_listen");
+  if (addr) {
+    web_opt.listen_addr = *addr;
+  }
+  iotgw::services::web_services::websocket::MongooseServer web_server(web_opt, logger);
+  if (!web_server.Start()) {
+    logger->Error("Failed to start web server on " + web_opt.listen_addr);
+  }
+
+  // TODO: Initialize MQTT client using web_server.GetMgr()
+  // mg_mqtt_connect(web_server.GetMgr(), "mqtt://localhost:1883", nullptr, nullptr);
+
   std::int64_t last_heartbeat_ms = 0;
 
   while (g_running.load()) {
+    web_server.Poll(50); // Poll mongoose events (HTTP/WS/MQTT)
+
     const auto now = iotgw::core::common::time::NowUnixMs();
     if (last_heartbeat_ms == 0 || now - last_heartbeat_ms >= 10'000) {
       last_heartbeat_ms = now;
       logger->Debug("heartbeat");
       logger->Flush();
     }
-    iotgw::core::common::time::SleepMs(200);
+    iotgw::core::common::time::SleepMs(50); // Yield CPU
   }
 
   logger->Info("iotgw stopping");

@@ -1,9 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
+#include "core/common/utils/std_compat.hpp"
 #include <string>
-#include <string_view>
 
 namespace iotgw::core::common::net {
 

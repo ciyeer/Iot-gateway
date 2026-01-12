@@ -7,7 +7,6 @@
 - `core/data`: storage, processing, analytics
 - `core/media`: image/video processing and streaming
 - `services`: system/web services (auth, websocket, REST API, update, watchdog)
-- `presentation`: UI (Qt) and Web UI frontend/backend
 
 ## Configuration
 Configuration files live under `config/` and are organized by domain:

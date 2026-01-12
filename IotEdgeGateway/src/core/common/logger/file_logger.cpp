@@ -1,6 +1,7 @@
 #include "core/common/logger/logger.hpp"
 
 #include <ctime>
+#include "core/common/utils/std_compat.hpp"
 #include <fstream>
 #include <iomanip>
 #include <sstream>

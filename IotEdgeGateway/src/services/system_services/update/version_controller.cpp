@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <string>
-#include <string_view>
+#include "core/common/utils/std_compat.hpp"
 
 namespace iotgw::services::system_services::update {
 
@@ -81,13 +81,13 @@ std::optional<SemVer> ParseSemVer(std::string_view s) {
   size_t i = 0;
 
   const auto maj = ParseNonNegativeInt(s, i);
-  if (!maj.has_value() || !ConsumeChar(s, i, '.')) return std::nullopt;
+  if (!maj || !ConsumeChar(s, i, '.')) return std::nullopt;
 
   const auto min = ParseNonNegativeInt(s, i);
-  if (!min.has_value() || !ConsumeChar(s, i, '.')) return std::nullopt;
+  if (!min || !ConsumeChar(s, i, '.')) return std::nullopt;
 
   const auto pat = ParseNonNegativeInt(s, i);
-  if (!pat.has_value()) return std::nullopt;
+  if (!pat) return std::nullopt;
 
   v.major = *maj;
   v.minor = *min;

@@ -2,11 +2,9 @@
 
 #include <cctype>
 #include <cstdint>
-#include <filesystem>
+#include "core/common/utils/std_compat.hpp"
 #include <fstream>
-#include <optional>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -23,7 +21,7 @@ public:
     std::string line;
     while (std::getline(ifs, line)) {
       const auto kv = ParseLine(line);
-      if (!kv.has_value()) continue;
+      if (!kv) continue;
       data_[kv->first] = kv->second;
     }
     return true;
@@ -41,29 +39,29 @@ public:
 
   std::string GetStringOr(std::string_view key, std::string default_value) const {
     const auto v = GetString(key);
-    return v.has_value() ? *v : std::move(default_value);
+    return v ? *v : std::move(default_value);
   }
 
   std::optional<std::int64_t> GetInt64(std::string_view key) const {
     const auto v = GetString(key);
-    if (!v.has_value()) return std::nullopt;
+    if (!v) return std::nullopt;
     return ParseInt64(*v);
   }
 
   std::int64_t GetInt64Or(std::string_view key, std::int64_t default_value) const {
     const auto v = GetInt64(key);
-    return v.has_value() ? *v : default_value;
+    return v ? *v : default_value;
   }
 
   std::optional<bool> GetBool(std::string_view key) const {
     const auto v = GetString(key);
-    if (!v.has_value()) return std::nullopt;
+    if (!v) return std::nullopt;
     return ParseBool(*v);
   }
 
   bool GetBoolOr(std::string_view key, bool default_value) const {
     const auto v = GetBool(key);
-    return v.has_value() ? *v : default_value;
+    return v ? *v : default_value;
   }
 
   const Map& Data() const { return data_; }
