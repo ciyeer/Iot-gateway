@@ -2,12 +2,11 @@
 
 #include <initializer_list>
 #include <string>
-#include "core/common/utils/std_compat.hpp"
 #include <utility>
 
 namespace iotgw::core::common::json {
 
-inline std::string Escape(std::string_view s) {
+inline std::string Escape(const std::string& s) {
   std::string out;
   out.reserve(s.size() + 8);
   for (const char c : s) {
@@ -33,7 +32,7 @@ inline std::string Escape(std::string_view s) {
   return out;
 }
 
-inline std::string Quote(std::string_view s) {
+inline std::string Quote(const std::string& s) {
   std::string out;
   out.reserve(s.size() + 2);
   out.push_back('\"');
@@ -48,7 +47,7 @@ inline std::string Number(long long v) { return std::to_string(v); }
 inline std::string Number(unsigned long long v) { return std::to_string(v); }
 inline std::string Number(double v) { return std::to_string(v); }
 
-inline std::string Object(std::initializer_list<std::pair<std::string_view, std::string>> fields) {
+inline std::string Object(std::initializer_list<std::pair<std::string, std::string>> fields) {
   std::string out;
   out.push_back('{');
   bool first = true;

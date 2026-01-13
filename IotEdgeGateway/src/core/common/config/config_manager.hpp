@@ -2,10 +2,10 @@
 
 #include <cctype>
 #include <cstdint>
-#include "core/common/utils/std_compat.hpp"
 #include <fstream>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace iotgw::core::common::config {
@@ -14,54 +14,59 @@ class ConfigManager {
 public:
   using Map = std::unordered_map<std::string, std::string>;
 
-  bool LoadKeyValueFile(const std::filesystem::path& file_path) {
-    std::ifstream ifs(file_path);
+  bool LoadKeyValueFile(const std::string& file_path) {
+    std::ifstream ifs(file_path.c_str());
     if (!ifs) return false;
 
     std::string line;
     while (std::getline(ifs, line)) {
-      const auto kv = ParseLine(line);
-      if (!kv) continue;
-      data_[kv->first] = kv->second;
+      std::string k;
+      std::string v;
+      if (!ParseLine(line, k, v)) continue;
+      data_[std::move(k)] = std::move(v);
     }
     return true;
   }
 
-  bool Has(std::string_view key) const {
-    return data_.find(std::string(key)) != data_.end();
+  bool Has(const std::string& key) const {
+    return data_.find(key) != data_.end();
   }
 
-  std::optional<std::string> GetString(std::string_view key) const {
-    const auto it = data_.find(std::string(key));
-    if (it == data_.end()) return std::nullopt;
-    return it->second;
+  bool GetString(const std::string& key, std::string& out) const {
+    const auto it = data_.find(key);
+    if (it == data_.end()) return false;
+    out = it->second;
+    return true;
   }
 
-  std::string GetStringOr(std::string_view key, std::string default_value) const {
-    const auto v = GetString(key);
-    return v ? *v : std::move(default_value);
+  std::string GetStringOr(const std::string& key, std::string default_value) const {
+    std::string out;
+    if (GetString(key, out)) return out;
+    return std::move(default_value);
   }
 
-  std::optional<std::int64_t> GetInt64(std::string_view key) const {
-    const auto v = GetString(key);
-    if (!v) return std::nullopt;
-    return ParseInt64(*v);
+  bool GetInt64(const std::string& key, std::int64_t& out) const {
+    std::string s;
+    if (!GetString(key, s)) return false;
+    return ParseInt64(s, out);
   }
 
-  std::int64_t GetInt64Or(std::string_view key, std::int64_t default_value) const {
-    const auto v = GetInt64(key);
-    return v ? *v : default_value;
+  std::int64_t GetInt64Or(const std::string& key, std::int64_t default_value) const {
+    std::int64_t out = 0;
+    if (GetInt64(key, out)) return out;
+    return default_value;
   }
 
-  std::optional<bool> GetBool(std::string_view key) const {
-    const auto v = GetString(key);
-    if (!v) return std::nullopt;
-    return ParseBool(*v);
+  bool GetBool(const std::string& key, bool& out) const {
+    std::string s;
+    if (!GetString(key, s)) return false;
+    return ParseBool(s, out);
   }
 
-  bool GetBoolOr(std::string_view key, bool default_value) const {
-    const auto v = GetBool(key);
-    return v ? *v : default_value;
+  bool GetBoolOr(const std::string& key, bool default_value) const {
+    bool out = false;
+    if (GetBool(key, out)) return out;
+    return default_value;
   }
 
   const Map& Data() const { return data_; }
@@ -75,47 +80,56 @@ private:
     s = s.substr(b, e - b);
   }
 
-  static inline std::optional<std::pair<std::string, std::string>> ParseLine(std::string line) {
+  static inline bool ParseLine(std::string line, std::string& key, std::string& val) {
     const auto hash = line.find('#');
     if (hash != std::string::npos) line = line.substr(0, hash);
 
     TrimInPlace(line);
-    if (line.empty()) return std::nullopt;
+    if (line.empty()) return false;
 
     const auto eq = line.find('=');
-    if (eq == std::string::npos) return std::nullopt;
+    if (eq == std::string::npos) return false;
 
-    std::string key = line.substr(0, eq);
-    std::string val = line.substr(eq + 1);
+    key = line.substr(0, eq);
+    val = line.substr(eq + 1);
     TrimInPlace(key);
     TrimInPlace(val);
-    if (key.empty()) return std::nullopt;
-    return std::make_pair(std::move(key), std::move(val));
+    return !key.empty();
   }
 
-  static inline std::optional<std::int64_t> ParseInt64(const std::string& s) {
-    if (s.empty()) return std::nullopt;
+  static inline bool ParseInt64(const std::string& s, std::int64_t& out) {
+    if (s.empty()) return false;
     std::int64_t sign = 1;
     size_t i = 0;
-    if (s[0] == '-') { sign = -1; i = 1; }
-    if (i >= s.size()) return std::nullopt;
+    if (s[0] == '-') {
+      sign = -1;
+      i = 1;
+    }
+    if (i >= s.size()) return false;
 
     std::int64_t v = 0;
     for (; i < s.size(); ++i) {
       const char c = s[i];
-      if (c < '0' || c > '9') return std::nullopt;
+      if (c < '0' || c > '9') return false;
       v = v * 10 + (c - '0');
     }
-    return v * sign;
+    out = v * sign;
+    return true;
   }
 
-  static inline std::optional<bool> ParseBool(const std::string& s) {
+  static inline bool ParseBool(const std::string& s, bool& out) {
     std::string t;
     t.reserve(s.size());
     for (char c : s) t.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
-    if (t == "1" || t == "true" || t == "yes" || t == "on") return true;
-    if (t == "0" || t == "false" || t == "no" || t == "off") return false;
-    return std::nullopt;
+    if (t == "1" || t == "true" || t == "yes" || t == "on") {
+      out = true;
+      return true;
+    }
+    if (t == "0" || t == "false" || t == "no" || t == "off") {
+      out = false;
+      return true;
+    }
+    return false;
   }
 
 private:

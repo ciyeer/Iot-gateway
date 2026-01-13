@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.2 - 2026-01-13
+
+### Changed
+- 工程标准切换为 C++14，移除对 C++17 标准库头（filesystem/optional/string_view）的依赖，适配 GCC 6.3.1 交叉工具链。
+- Gateway/Config/Update 模块接口调整为纯 C++14 形态（`std::string` + `bool`/out 参数），并用 POSIX 文件/目录操作替代 filesystem。
+
+### Removed
+- 移除 C++17 兼容层 `std_compat.hpp`（代码已不再引用）。
+- 删除未被引用的兼容头 `fs_compat.hpp`。
+
+### Fixed
+- 修复因工具链缺失 `<filesystem>`/`<optional>` 标准头导致的交叉编译失败。
+
 ## 0.1.1 - 2026-01-12
 
 ### Changed

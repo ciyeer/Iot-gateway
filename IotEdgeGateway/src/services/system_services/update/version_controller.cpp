@@ -3,23 +3,31 @@
 #include <algorithm>
 #include <cctype>
 #include <string>
-#include "core/common/utils/std_compat.hpp"
 
 namespace iotgw::services::system_services::update {
 
 static bool IsDigit(char c) { return c >= '0' && c <= '9'; }
 
-static std::optional<std::int64_t> ParseNonNegativeInt(std::string_view s, size_t& i) {
-  if (i >= s.size() || !IsDigit(s[i])) return std::nullopt;
+static std::string TrimCopy(const std::string& in) {
+  size_t b = 0;
+  while (b < in.size() && std::isspace(static_cast<unsigned char>(in[b]))) ++b;
+  size_t e = in.size();
+  while (e > b && std::isspace(static_cast<unsigned char>(in[e - 1]))) --e;
+  return in.substr(b, e - b);
+}
+
+static bool ParseNonNegativeInt(const std::string& s, size_t& i, std::int64_t& out) {
+  if (i >= s.size() || !IsDigit(s[i])) return false;
   std::int64_t v = 0;
   while (i < s.size() && IsDigit(s[i])) {
     v = v * 10 + (s[i] - '0');
     ++i;
   }
-  return v;
+  out = v;
+  return true;
 }
 
-static bool ConsumeChar(std::string_view s, size_t& i, char c) {
+static bool ConsumeChar(const std::string& s, size_t& i, char c) {
   if (i < s.size() && s[i] == c) {
     ++i;
     return true;
@@ -27,15 +35,20 @@ static bool ConsumeChar(std::string_view s, size_t& i, char c) {
   return false;
 }
 
-static int CompareIdentifiers(std::string_view a, std::string_view b) {
+static bool IsNumeric(const std::string& s) {
+  if (s.empty()) return false;
+  return std::all_of(s.begin(), s.end(), [](char c) { return IsDigit(c); });
+}
+
+static int CompareIdentifiers(const std::string& a, const std::string& b) {
   size_t ia = 0;
   size_t ib = 0;
   while (true) {
     const auto next_a = a.find('.', ia);
     const auto next_b = b.find('.', ib);
 
-    const std::string_view id_a = (next_a == std::string_view::npos) ? a.substr(ia) : a.substr(ia, next_a - ia);
-    const std::string_view id_b = (next_b == std::string_view::npos) ? b.substr(ib) : b.substr(ib, next_b - ib);
+    const std::string id_a = (next_a == std::string::npos) ? a.substr(ia) : a.substr(ia, next_a - ia);
+    const std::string id_b = (next_b == std::string::npos) ? b.substr(ib) : b.substr(ib, next_b - ib);
 
     const bool a_empty = id_a.empty();
     const bool b_empty = id_b.empty();
@@ -43,12 +56,12 @@ static int CompareIdentifiers(std::string_view a, std::string_view b) {
     if (a_empty) return -1;
     if (b_empty) return 1;
 
-    const bool a_num = std::all_of(id_a.begin(), id_a.end(), [](char c) { return IsDigit(c); });
-    const bool b_num = std::all_of(id_b.begin(), id_b.end(), [](char c) { return IsDigit(c); });
+    const bool a_num = IsNumeric(id_a);
+    const bool b_num = IsNumeric(id_b);
 
     if (a_num && b_num) {
-      const auto va = std::stoll(std::string(id_a));
-      const auto vb = std::stoll(std::string(id_b));
+      const auto va = std::stoll(id_a);
+      const auto vb = std::stoll(id_b);
       if (va < vb) return -1;
       if (va > vb) return 1;
     } else if (a_num && !b_num) {
@@ -60,57 +73,54 @@ static int CompareIdentifiers(std::string_view a, std::string_view b) {
       if (id_a > id_b) return 1;
     }
 
-    if (next_a == std::string_view::npos && next_b == std::string_view::npos) return 0;
-    if (next_a == std::string_view::npos) return -1;
-    if (next_b == std::string_view::npos) return 1;
+    if (next_a == std::string::npos && next_b == std::string::npos) return 0;
+    if (next_a == std::string::npos) return -1;
+    if (next_b == std::string::npos) return 1;
 
     ia = next_a + 1;
     ib = next_b + 1;
   }
 }
 
-std::optional<SemVer> ParseSemVer(std::string_view s) {
-  size_t b = 0;
-  while (b < s.size() && std::isspace(static_cast<unsigned char>(s[b]))) ++b;
-  size_t e = s.size();
-  while (e > b && std::isspace(static_cast<unsigned char>(s[e - 1]))) --e;
-  s = s.substr(b, e - b);
-  if (s.empty()) return std::nullopt;
+bool ParseSemVer(const std::string& in, SemVer& out) {
+  const std::string s = TrimCopy(in);
+  if (s.empty()) return false;
 
   SemVer v;
   size_t i = 0;
 
-  const auto maj = ParseNonNegativeInt(s, i);
-  if (!maj || !ConsumeChar(s, i, '.')) return std::nullopt;
+  std::int64_t maj = 0;
+  if (!ParseNonNegativeInt(s, i, maj) || !ConsumeChar(s, i, '.')) return false;
 
-  const auto min = ParseNonNegativeInt(s, i);
-  if (!min || !ConsumeChar(s, i, '.')) return std::nullopt;
+  std::int64_t min = 0;
+  if (!ParseNonNegativeInt(s, i, min) || !ConsumeChar(s, i, '.')) return false;
 
-  const auto pat = ParseNonNegativeInt(s, i);
-  if (!pat) return std::nullopt;
+  std::int64_t pat = 0;
+  if (!ParseNonNegativeInt(s, i, pat)) return false;
 
-  v.major = *maj;
-  v.minor = *min;
-  v.patch = *pat;
+  v.major = maj;
+  v.minor = min;
+  v.patch = pat;
 
   if (i < s.size() && s[i] == '-') {
     ++i;
     const auto start = i;
     while (i < s.size() && s[i] != '+') ++i;
-    v.prerelease = std::string(s.substr(start, i - start));
-    if (v.prerelease.empty()) return std::nullopt;
+    v.prerelease = s.substr(start, i - start);
+    if (v.prerelease.empty()) return false;
   }
 
   if (i < s.size() && s[i] == '+') {
     ++i;
     const auto start = i;
     while (i < s.size()) ++i;
-    v.build = std::string(s.substr(start, i - start));
-    if (v.build.empty()) return std::nullopt;
+    v.build = s.substr(start, i - start);
+    if (v.build.empty()) return false;
   }
 
-  if (i != s.size()) return std::nullopt;
-  return v;
+  if (i != s.size()) return false;
+  out = v;
+  return true;
 }
 
 int CompareSemVer(const SemVer& a, const SemVer& b) {

@@ -2,7 +2,6 @@
 
 #include <functional>
 #include <string>
-#include "core/common/utils/std_compat.hpp"
 #include <vector>
 
 #include "mongoose.h"
@@ -50,9 +49,9 @@ private:
   void HandleEvent(struct mg_connection* c, int ev, void* ev_data) {
     if (ev == MG_EV_HTTP_MSG) {
       struct mg_http_message* hm = (struct mg_http_message*)ev_data;
-      std::string_view uri(hm->uri.buf, hm->uri.len);
-      
-      if (logger_) logger_->Debug("HTTP request: " + std::string(uri));
+      const std::string uri(hm->uri.buf, hm->uri.len);
+
+      if (logger_) logger_->Debug("HTTP request: " + uri);
 
       if (mg_match(hm->uri, mg_str(opt_.ws_path.c_str()), NULL)) {
         mg_ws_upgrade(c, hm, nullptr);
@@ -68,8 +67,8 @@ private:
       }
     } else if (ev == MG_EV_WS_MSG) {
       struct mg_ws_message* wm = (struct mg_ws_message*)ev_data;
-      std::string_view msg(wm->data.buf, wm->data.len);
-      if (logger_) logger_->Debug("WS message: " + std::string(msg));
+      const std::string msg(wm->data.buf, wm->data.len);
+      if (logger_) logger_->Debug("WS message: " + msg);
       // Echo back
       mg_ws_send(c, wm->data.buf, wm->data.len, WEBSOCKET_OP_TEXT);
     }

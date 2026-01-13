@@ -83,69 +83,57 @@
 ## 📂 项目结构 · Directory Layout
 
 ```
-iot-gateway/
-├── core/
-│   ├── device_manager/
-│   ├── protocol_adapter/
-│   ├── control_center/
-│   ├── data_center/
-│
-├── media/
-│   ├── mjpg/
-│   └── gstreamer/
-│
-├── web/
-│   ├── api/
-│   ├── websocket/
-│   └── static/
-│
-├── qt_ui/
-│
-├── config/
-│   ├── gateway.yaml
-│   ├── device.json
-│
-├── scripts/
-│   ├── start.sh
-│   └── stop.sh
-│
-└── systemd/
-    └── iot-gateway.service
+IotEdgeGateway/
+├── IotEdgeGateway/
+│   ├── CMakeLists.txt
+│   ├── src/
+│   │   ├── core/
+│   │   ├── services/
+│   │   ├── gateway/
+│   │   └── vendor/
+│   ├── config/
+│   │   ├── environments/
+│   │   ├── network/
+│   │   ├── devices/
+│   │   └── rules/
+│   ├── docs/
+│   │   ├── architecture/
+│   │   ├── deployment/
+│   │   └── development/
+│   ├── build-deploy/
+│   │   ├── docker/
+│   │   └── deploy/
+│   └── changelog.md
+├── LICENSE
+└── README.md
 ```
 
 ---
 
 ## 🚀 快速启动 · Quick Start
 
-### 1️⃣ 克隆项目
+### 1️⃣ 构建
+
+从仓库根目录执行：
 
 ```bash
-git clone https://github.com/ciyeer/snail-iot-gateway.git
-cd snail-iot-gateway
+rm -rf build
+cmake -S IotEdgeGateway/IotEdgeGateway -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j
 ```
 
-### 2️⃣ 配置依赖
+产物：
+- `build/iotgw_gateway`
 
-```bash
-sudo apt install sqlite3 gstreamer1.0-tools mjpg-streamer
-```
+说明：如果你使用的是 aarch64 交叉编译工具链，生成的二进制需要拷贝到 RK3568（aarch64 Linux）上运行。
 
-### 3️⃣ 构建与运行
+### 2️⃣ 运行与验证接口
 
-```bash
-mkdir build && cd build
-cmake ..
-make -j4
-sudo ./iot-gateway
-```
+在目标设备上启动后，默认监听：
+- HTTP：`http://<RK3568_IP>:8000/api/health`
+- WebSocket：`ws://<RK3568_IP>:8000/ws`
 
-### 4️⃣ 访问 Web 页面
-
-浏览器打开：
-
-```
-http://<RK3568_IP>:8080
-```
+更完整的构建/部署说明请参考：`IotEdgeGateway/docs/deployment/`。
 
 ---
 

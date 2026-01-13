@@ -2,7 +2,6 @@
 
 #include <chrono>
 #include <cstdint>
-#include "core/common/utils/std_compat.hpp"
 #include <memory>
 #include <mutex>
 #include <string>
@@ -39,15 +38,15 @@ public:
   void SetLevel(Level level);
   Level GetLevel() const;
 
-  void Log(Level level, std::string_view msg);
-  void Log(Level level, std::string_view tag, std::string_view msg);
+  void Log(Level level, const std::string& msg);
+  void Log(Level level, const std::string& tag, const std::string& msg);
 
-  void Trace(std::string_view msg);
-  void Debug(std::string_view msg);
-  void Info(std::string_view msg);
-  void Warn(std::string_view msg);
-  void Error(std::string_view msg);
-  void Fatal(std::string_view msg);
+  void Trace(const std::string& msg);
+  void Debug(const std::string& msg);
+  void Info(const std::string& msg);
+  void Warn(const std::string& msg);
+  void Error(const std::string& msg);
+  void Fatal(const std::string& msg);
 
   void Flush();
 
@@ -62,19 +61,19 @@ private:
 
 class FileSink final : public Sink {
 public:
-  explicit FileSink(std::filesystem::path file_path);
+  explicit FileSink(std::string file_path);
 
   void Write(const Event& e) override;
   void Flush() override;
 
-  std::filesystem::path Path() const;
+  std::string Path() const;
 
 private:
   std::string FormatLine(const Event& e) const;
 
 private:
   mutable std::mutex mu_;
-  std::filesystem::path file_path_;
+  std::string file_path_;
 };
 
 }  // namespace iotgw::core::common::log

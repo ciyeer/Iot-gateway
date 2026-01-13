@@ -1,8 +1,8 @@
 # Coding Standards (IotEdgeGateway)
 
 ## C++ Standard
-- C++17
-- Use `std::filesystem` for paths, `std::optional` for optional values, and `std::string_view` for non-owning string parameters.
+- C++14
+- Prefer `std::string` for paths and non-owning inputs; use `bool` + out parameters instead of `std::optional`.
 
 ## Naming
 - Namespace: `iotgw::...`
@@ -15,7 +15,7 @@
 - Keep includes minimal; include what you use.
 
 ## Error Handling
-- Prefer returning `bool` / `std::optional<T>` for recoverable failures.
+- Prefer returning `bool` for recoverable failures.
 - Avoid throwing across module boundaries unless a clear policy exists.
 
 ## Threading

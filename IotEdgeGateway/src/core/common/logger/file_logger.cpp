@@ -1,7 +1,6 @@
 #include "core/common/logger/logger.hpp"
 
 #include <ctime>
-#include "core/common/utils/std_compat.hpp"
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -37,11 +36,11 @@ bool Logger::ShouldLog(Level level) const {
   return static_cast<std::uint8_t>(level) >= static_cast<std::uint8_t>(level_);
 }
 
-void Logger::Log(Level level, std::string_view msg) {
-  Log(level, std::string_view{}, msg);
+void Logger::Log(Level level, const std::string& msg) {
+  Log(level, std::string{}, msg);
 }
 
-void Logger::Log(Level level, std::string_view tag, std::string_view msg) {
+void Logger::Log(Level level, const std::string& tag, const std::string& msg) {
   std::shared_ptr<Sink> sink;
   Event e;
 
@@ -51,19 +50,19 @@ void Logger::Log(Level level, std::string_view tag, std::string_view msg) {
     sink = sink_;
     e.level = level;
     e.ts = std::chrono::system_clock::now();
-    e.tag.assign(tag.data(), tag.size());
-    e.message.assign(msg.data(), msg.size());
+    e.tag = tag;
+    e.message = msg;
   }
 
   sink->Write(e);
 }
 
-void Logger::Trace(std::string_view msg) { Log(Level::Trace, msg); }
-void Logger::Debug(std::string_view msg) { Log(Level::Debug, msg); }
-void Logger::Info(std::string_view msg) { Log(Level::Info, msg); }
-void Logger::Warn(std::string_view msg) { Log(Level::Warn, msg); }
-void Logger::Error(std::string_view msg) { Log(Level::Error, msg); }
-void Logger::Fatal(std::string_view msg) { Log(Level::Fatal, msg); }
+void Logger::Trace(const std::string& msg) { Log(Level::Trace, msg); }
+void Logger::Debug(const std::string& msg) { Log(Level::Debug, msg); }
+void Logger::Info(const std::string& msg) { Log(Level::Info, msg); }
+void Logger::Warn(const std::string& msg) { Log(Level::Warn, msg); }
+void Logger::Error(const std::string& msg) { Log(Level::Error, msg); }
+void Logger::Fatal(const std::string& msg) { Log(Level::Fatal, msg); }
 
 void Logger::Flush() {
   std::shared_ptr<Sink> sink;
@@ -74,9 +73,9 @@ void Logger::Flush() {
   if (sink) sink->Flush();
 }
 
-FileSink::FileSink(std::filesystem::path file_path) : file_path_(std::move(file_path)) {}
+FileSink::FileSink(std::string file_path) : file_path_(std::move(file_path)) {}
 
-std::filesystem::path FileSink::Path() const {
+std::string FileSink::Path() const {
   std::lock_guard<std::mutex> lk(mu_);
   return file_path_;
 }
@@ -101,7 +100,7 @@ std::string FileSink::FormatLine(const Event& e) const {
 void FileSink::Write(const Event& e) {
   std::lock_guard<std::mutex> lk(mu_);
 
-  std::ofstream ofs(file_path_, std::ios::out | std::ios::app);
+  std::ofstream ofs(file_path_.c_str(), std::ios::out | std::ios::app);
   if (!ofs) return;
 
   ofs << FormatLine(e);
@@ -110,7 +109,7 @@ void FileSink::Write(const Event& e) {
 
 void FileSink::Flush() {
   std::lock_guard<std::mutex> lk(mu_);
-  std::ofstream ofs(file_path_, std::ios::out | std::ios::app);
+  std::ofstream ofs(file_path_.c_str(), std::ios::out | std::ios::app);
   if (!ofs) return;
   ofs.flush();
 }
