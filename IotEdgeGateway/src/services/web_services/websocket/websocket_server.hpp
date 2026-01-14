@@ -16,6 +16,9 @@ public:
     std::string ws_path = "/ws";
   };
 
+  using WsMessageHandler =
+      std::function<void(struct mg_connection* c, const std::string& message)>;
+
   explicit MongooseServer(Options opt, std::shared_ptr<iotgw::core::common::log::Logger> logger)
       : opt_(std::move(opt)), logger_(std::move(logger)) {
     mg_mgr_init(&mgr_);
@@ -39,6 +42,16 @@ public:
   }
 
   mg_mgr* GetMgr() { return &mgr_; }
+
+  void SetWsMessageHandler(WsMessageHandler handler) { on_ws_msg_ = std::move(handler); }
+
+  void BroadcastText(const std::string& text) {
+    for (auto* c : ws_conns_) {
+      if (c != nullptr && c->is_websocket) {
+        mg_ws_send(c, text.data(), text.size(), WEBSOCKET_OP_TEXT);
+      }
+    }
+  }
 
 private:
   static void EventHandler(struct mg_connection* c, int ev, void* ev_data) {
@@ -65,12 +78,26 @@ private:
         // For now, simple 404
         mg_http_reply(c, 404, "", "Not Found\n");
       }
+    } else if (ev == MG_EV_WS_OPEN) {
+      ws_conns_.push_back(c);
     } else if (ev == MG_EV_WS_MSG) {
       struct mg_ws_message* wm = (struct mg_ws_message*)ev_data;
       const std::string msg(wm->data.buf, wm->data.len);
       if (logger_) logger_->Debug("WS message: " + msg);
-      // Echo back
-      mg_ws_send(c, wm->data.buf, wm->data.len, WEBSOCKET_OP_TEXT);
+      if (on_ws_msg_) {
+        on_ws_msg_(c, msg);
+      } else {
+        mg_ws_send(c, wm->data.buf, wm->data.len, WEBSOCKET_OP_TEXT);
+      }
+    } else if (ev == MG_EV_CLOSE) {
+      if (c != nullptr && c->is_websocket && !ws_conns_.empty()) {
+        for (size_t i = 0; i < ws_conns_.size(); ++i) {
+          if (ws_conns_[i] == c) {
+            ws_conns_.erase(ws_conns_.begin() + static_cast<long>(i));
+            break;
+          }
+        }
+      }
     }
   }
 
@@ -78,6 +105,8 @@ private:
   Options opt_;
   std::shared_ptr<iotgw::core::common::log::Logger> logger_;
   struct mg_mgr mgr_;
+  WsMessageHandler on_ws_msg_;
+  std::vector<struct mg_connection*> ws_conns_;
 };
 
 }  // namespace iotgw::services::web_services::websocket

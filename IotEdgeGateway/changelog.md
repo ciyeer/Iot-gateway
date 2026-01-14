@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.3 - 2026-01-14
+
+### Added
+- 新增基于 Mongoose 的 MQTT 客户端能力，并接入网关主循环实现 MQTT↔WebSocket 双向转发。
+- WebSocket 服务增加连接管理与广播接口，用于将 MQTT 上报推送到浏览器端。
+
+### Changed
+- WebSocket 下发控制消息改为强制携带 `topic` 字段，不再支持默认 topic 回退发布。
+- 配置项 `mqtt_pub_topic` 不再使用（发布 topic 由 Web 消息指定）。
+
 ## 0.1.2 - 2026-01-13
 
 ### Changed

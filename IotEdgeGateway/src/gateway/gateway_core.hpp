@@ -12,7 +12,9 @@
 
 #include "core/common/config/config_manager.hpp"
 #include "core/common/logger/logger.hpp"
+#include "core/common/utils/json_utils.hpp"
 #include "core/common/utils/time_utils.hpp"
+#include "core/device/protocol_adapters/mqtt_adapter/mqtt_adapter.hpp"
 #include "services/system_services/update/update_manager.hpp"
 #include "services/web_services/websocket/websocket_server.hpp"
 
@@ -94,6 +96,78 @@ public:
     if (!web_server.Start()) {
       logger->Error("Failed to start web server on " + web_opt.listen_addr);
     }
+
+    iotgw::core::device::protocol_adapters::mqtt::MqttClient mqtt_client(web_server.GetMgr(),
+                                                                         logger);
+    std::string mqtt_url;
+    if (cfg.GetString("mqtt_url", mqtt_url) && !mqtt_url.empty()) {
+      iotgw::core::device::protocol_adapters::mqtt::MqttClient::Options mo;
+      mo.url = mqtt_url;
+      cfg.GetString("mqtt_client_id", mo.client_id);
+      cfg.GetString("mqtt_user", mo.user);
+      cfg.GetString("mqtt_pass", mo.pass);
+
+      std::int64_t keepalive = 0;
+      if (cfg.GetInt64("mqtt_keepalive_sec", keepalive) && keepalive > 0 &&
+          keepalive <= 65535) {
+        mo.keepalive_sec = static_cast<std::uint16_t>(keepalive);
+      }
+      bool clean = true;
+      if (cfg.GetBool("mqtt_clean_session", clean)) mo.clean_session = clean;
+
+      (void) mqtt_client.Connect(mo);
+
+      std::string sub_topic;
+      if (cfg.GetString("mqtt_sub_topic", sub_topic) && !sub_topic.empty()) {
+        (void) mqtt_client.Subscribe(sub_topic, 0);
+      }
+
+      mqtt_client.SetMessageHandler([&web_server](const std::string& topic,
+                                                  const std::string& payload) {
+        const std::string frame = iotgw::core::common::json::Object({
+            {"type", iotgw::core::common::json::Quote("mqtt_msg")},
+            {"topic", iotgw::core::common::json::Quote(topic)},
+            {"payload", iotgw::core::common::json::Quote(payload)},
+        });
+        web_server.BroadcastText(frame);
+      });
+    }
+
+    web_server.SetWsMessageHandler([&](struct mg_connection* c, const std::string& msg) {
+      std::string pub_topic;
+      std::string payload;
+
+      char* t = mg_json_get_str(mg_str(msg.c_str()), "$.topic");
+      char* p = mg_json_get_str(mg_str(msg.c_str()), "$.payload");
+      if (t != nullptr) pub_topic = t;
+      if (p != nullptr) payload = p;
+      if (t != nullptr) mg_free(t);
+      if (p != nullptr) mg_free(p);
+
+      if (pub_topic.empty()) {
+        const std::string resp = iotgw::core::common::json::Object({
+            {"type", iotgw::core::common::json::Quote("error")},
+            {"error", iotgw::core::common::json::Quote("missing_topic")},
+        });
+        mg_ws_send(c, resp.data(), resp.size(), WEBSOCKET_OP_TEXT);
+        return;
+      }
+
+      if (mqtt_client.IsOpen()) {
+        const bool ok = mqtt_client.Publish(pub_topic, payload, 0, false);
+        const std::string resp = iotgw::core::common::json::Object({
+            {"type", iotgw::core::common::json::Quote("mqtt_pub_ack")},
+            {"ok", iotgw::core::common::json::Bool(ok)},
+        });
+        mg_ws_send(c, resp.data(), resp.size(), WEBSOCKET_OP_TEXT);
+      } else {
+        const std::string resp = iotgw::core::common::json::Object({
+            {"type", iotgw::core::common::json::Quote("error")},
+            {"error", iotgw::core::common::json::Quote("mqtt_not_connected")},
+        });
+        mg_ws_send(c, resp.data(), resp.size(), WEBSOCKET_OP_TEXT);
+      }
+    });
 
     std::int64_t last_heartbeat_ms = 0;
 
