@@ -8,7 +8,11 @@
 #include "mongoose.h"
 #include "core/common/logger/logger.hpp"
 
-namespace iotgw::core::device::protocol_adapters::mqtt {
+namespace iotgw {
+namespace core {
+namespace device {
+namespace protocol_adapters {
+namespace mqtt {
 
 class MqttClient {
 public:
@@ -49,4 +53,8 @@ private:
   std::shared_ptr<iotgw::core::common::log::Logger> logger_;
 };
 
-}  // namespace iotgw::core::device::protocol_adapters::mqtt
+}  // namespace mqtt
+}  // namespace protocol_adapters
+}  // namespace device
+}  // namespace core
+}  // namespace iotgw

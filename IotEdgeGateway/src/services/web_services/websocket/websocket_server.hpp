@@ -7,7 +7,10 @@
 #include "mongoose.h"
 #include "core/common/logger/logger.hpp"
 
-namespace iotgw::services::web_services::websocket {
+namespace iotgw {
+namespace services {
+namespace web_services {
+namespace websocket {
 
 class MongooseServer {
 public:
@@ -109,4 +112,7 @@ private:
   std::vector<struct mg_connection*> ws_conns_;
 };
 
-}  // namespace iotgw::services::web_services::websocket
+}  // namespace websocket
+}  // namespace web_services
+}  // namespace services
+}  // namespace iotgw

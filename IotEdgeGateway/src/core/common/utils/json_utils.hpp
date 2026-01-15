@@ -4,7 +4,10 @@
 #include <string>
 #include <utility>
 
-namespace iotgw::core::common::json {
+namespace iotgw {
+namespace core {
+namespace common {
+namespace json {
 
 inline std::string Escape(const std::string& s) {
   std::string out;
@@ -62,4 +65,7 @@ inline std::string Object(std::initializer_list<std::pair<std::string, std::stri
   return out;
 }
 
-}  // namespace iotgw::core::common::json
+}  // namespace json
+}  // namespace common
+}  // namespace core
+}  // namespace iotgw

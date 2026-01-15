@@ -8,7 +8,10 @@
 #include <string>
 #include <thread>
 
-namespace iotgw::core::common::time {
+namespace iotgw {
+namespace core {
+namespace common {
+namespace time {
 
 inline std::int64_t NowUnixMs() {
   const auto now = std::chrono::system_clock::now();
@@ -36,4 +39,7 @@ inline void SleepMs(std::uint32_t ms) {
   std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
-}  // namespace iotgw::core::common::time
+}  // namespace time
+}  // namespace common
+}  // namespace core
+}  // namespace iotgw

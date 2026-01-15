@@ -15,7 +15,10 @@
 #include "core/common/logger/logger.hpp"
 #include "core/common/utils/time_utils.hpp"
 
-namespace iotgw::services::system_services::update {
+namespace iotgw {
+namespace services {
+namespace system_services {
+namespace update {
 
 struct SemVer {
   std::int64_t major{};
@@ -86,7 +89,7 @@ public:
   std::string GetCurrentVersionOr(std::string default_value) const {
     std::string out;
     if (GetCurrentVersion(out)) return out;
-    return std::move(default_value);
+    return default_value;
   }
 
   bool SetCurrentVersion(const std::string& version) {
@@ -374,4 +377,7 @@ private:
   std::shared_ptr<iotgw::core::common::log::Logger> logger_;
 };
 
-}  // namespace iotgw::services::system_services::update
+}  // namespace update
+}  // namespace system_services
+}  // namespace services
+}  // namespace iotgw

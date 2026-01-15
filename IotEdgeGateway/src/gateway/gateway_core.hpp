@@ -18,7 +18,8 @@
 #include "services/system_services/update/update_manager.hpp"
 #include "services/web_services/websocket/websocket_server.hpp"
 
-namespace iotgw::gateway {
+namespace iotgw {
+namespace gateway {
 
 struct Args {
   std::string config_kv;
@@ -272,4 +273,5 @@ private:
   }
 };
 
-}  // namespace iotgw::gateway
+}  // namespace gateway
+}  // namespace iotgw

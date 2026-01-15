@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.4 - 2026-01-15
+
+### Added
+- 引入 yaml-cpp 源码到 `src/vendor/yaml-cpp/`，用于离线构建场景的 YAML 解析依赖。
+
+### Changed
+- 构建系统以“源码直编”方式集成 yaml-cpp（不依赖其自带 CMake），并链接到 `iotgw_common`。
+
+### Removed
+- 删除未使用的目录 `IotEdgeGateway/vendor/`。
+
+### Fixed
+- 修复多处 C++17 嵌套命名空间写法导致的 C++14 + `-Wpedantic` 编译告警。
+- 修复 `return std::move(default_value)` 引发的冗余 move 告警。
+
 ## 0.1.3 - 2026-01-14
 
 ### Added

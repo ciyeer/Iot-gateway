@@ -6,7 +6,10 @@
 #include <sstream>
 #include <utility>
 
-namespace iotgw::core::common::log {
+namespace iotgw {
+namespace core {
+namespace common {
+namespace log {
 
 static const char* ToString(Level level) {
   switch (level) {
@@ -114,4 +117,7 @@ void FileSink::Flush() {
   ofs.flush();
 }
 
-}  // namespace iotgw::core::common::log
+}  // namespace log
+}  // namespace common
+}  // namespace core
+}  // namespace iotgw

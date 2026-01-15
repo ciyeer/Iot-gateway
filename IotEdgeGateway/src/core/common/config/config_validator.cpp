@@ -3,7 +3,10 @@
 #include <string>
 #include <vector>
 
-namespace iotgw::core::common::config {
+namespace iotgw {
+namespace core {
+namespace common {
+namespace config {
 
 static std::string MissingKeyMessage(const std::string& key) {
   return std::string("missing config key: ") + key;
@@ -19,4 +22,7 @@ std::vector<std::string> ValidateRequiredKeys(const ConfigManager& cfg,
   return errors;
 }
 
-}  // namespace iotgw::core::common::config
+}  // namespace config
+}  // namespace common
+}  // namespace core
+}  // namespace iotgw

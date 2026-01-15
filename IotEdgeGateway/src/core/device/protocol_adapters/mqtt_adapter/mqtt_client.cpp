@@ -2,7 +2,11 @@
 
 #include <utility>
 
-namespace iotgw::core::device::protocol_adapters::mqtt {
+namespace iotgw {
+namespace core {
+namespace device {
+namespace protocol_adapters {
+namespace mqtt {
 
 MqttClient::MqttClient(struct mg_mgr* mgr, std::shared_ptr<iotgw::core::common::log::Logger> logger)
     : mgr_(mgr), logger_(std::move(logger)) {}
@@ -102,4 +106,8 @@ void MqttClient::HandleEvent(struct mg_connection* c, int ev, void* ev_data) {
   }
 }
 
-}  // namespace iotgw::core::device::protocol_adapters::mqtt
+}  // namespace mqtt
+}  // namespace protocol_adapters
+}  // namespace device
+}  // namespace core
+}  // namespace iotgw

@@ -8,7 +8,10 @@
 #include <utility>
 #include <vector>
 
-namespace iotgw::core::common::config {
+namespace iotgw {
+namespace core {
+namespace common {
+namespace config {
 
 class ConfigManager {
 public:
@@ -42,7 +45,7 @@ public:
   std::string GetStringOr(const std::string& key, std::string default_value) const {
     std::string out;
     if (GetString(key, out)) return out;
-    return std::move(default_value);
+    return default_value;
   }
 
   bool GetInt64(const std::string& key, std::int64_t& out) const {
@@ -139,4 +142,7 @@ private:
 std::vector<std::string> ValidateRequiredKeys(const ConfigManager& cfg,
                                              const std::vector<std::string>& required_keys);
 
-}  // namespace iotgw::core::common::config
+}  // namespace config
+}  // namespace common
+}  // namespace core
+}  // namespace iotgw

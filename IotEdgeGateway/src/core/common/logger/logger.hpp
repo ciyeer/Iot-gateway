@@ -6,7 +6,10 @@
 #include <mutex>
 #include <string>
 
-namespace iotgw::core::common::log {
+namespace iotgw {
+namespace core {
+namespace common {
+namespace log {
 
 enum class Level : std::uint8_t {
   Trace = 0,
@@ -76,4 +79,7 @@ private:
   std::string file_path_;
 };
 
-}  // namespace iotgw::core::common::log
+}  // namespace log
+}  // namespace common
+}  // namespace core
+}  // namespace iotgw

@@ -4,7 +4,10 @@
 #include <cctype>
 #include <string>
 
-namespace iotgw::services::system_services::update {
+namespace iotgw {
+namespace services {
+namespace system_services {
+namespace update {
 
 static bool IsDigit(char c) { return c >= '0' && c <= '9'; }
 
@@ -137,4 +140,7 @@ int CompareSemVer(const SemVer& a, const SemVer& b) {
   return CompareIdentifiers(a.prerelease, b.prerelease);
 }
 
-}  // namespace iotgw::services::system_services::update
+}  // namespace update
+}  // namespace system_services
+}  // namespace services
+}  // namespace iotgw
