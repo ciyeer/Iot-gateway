@@ -6,28 +6,31 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(YAML_CPP_BUILD_TOOLS OFF)
-set(YAML_CPP_BUILD_TESTS OFF)
-set(YAML_CPP_INSTALL OFF)
-set(YAML_CPP_FORMAT_SOURCE OFF)
+include(FetchContent)
 
-if (NOT EXISTS "${PROJECT_SOURCE_DIR}/src/vendor/yaml-cpp/include/yaml-cpp/yaml.h")
-  message(FATAL_ERROR "yaml-cpp not found at src/vendor/yaml-cpp; YAML config is required")
-endif()
-
-file(GLOB YAML_CPP_SOURCES CONFIGURE_DEPENDS
-  "${PROJECT_SOURCE_DIR}/src/vendor/yaml-cpp/src/*.cpp"
-  "${PROJECT_SOURCE_DIR}/src/vendor/yaml-cpp/src/contrib/*.cpp"
+set(MG_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(mongoose
+  GIT_REPOSITORY https://github.com/cesanta/mongoose.git
+  GIT_TAG 7.20
+  GIT_SHALLOW FALSE
 )
+FetchContent_MakeAvailable(mongoose)
 
-add_library(yaml-cpp STATIC ${YAML_CPP_SOURCES})
-target_include_directories(yaml-cpp
+add_library(mongoose_static STATIC
+  ${mongoose_SOURCE_DIR}/mongoose.c
+)
+target_include_directories(mongoose_static
   PUBLIC
-    "${PROJECT_SOURCE_DIR}/src/vendor/yaml-cpp/include"
-  PRIVATE
-    "${PROJECT_SOURCE_DIR}/src/vendor/yaml-cpp/src"
+    ${mongoose_SOURCE_DIR}
 )
-target_compile_definitions(yaml-cpp PUBLIC YAML_CPP_STATIC_DEFINE)
+
+set(RYML_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(ryml
+  GIT_REPOSITORY https://github.com/biojppm/rapidyaml.git
+  GIT_TAG v0.10.0
+  GIT_SHALLOW FALSE
+)
+FetchContent_MakeAvailable(ryml)
 
 add_library(iotgw_common STATIC
   src/core/common/logger/file_logger.cpp
@@ -38,33 +41,27 @@ add_library(iotgw_common STATIC
 
 add_executable(iotgw_gateway
   src/gateway/main.cpp
-  src/vendor/mongoose/mongoose.c
-)
-
-target_include_directories(iotgw_gateway
-  PRIVATE
-    ${PROJECT_SOURCE_DIR}/src/vendor/mongoose
 )
 
 target_link_libraries(iotgw_gateway
   PRIVATE
     iotgw_common
+    mongoose_static
 )
 
 target_include_directories(iotgw_common
   PUBLIC
     ${PROJECT_SOURCE_DIR}/src
-  PRIVATE
-    ${PROJECT_SOURCE_DIR}/src/vendor/mongoose
 )
 
 target_link_libraries(iotgw_common
   PRIVATE
-    yaml-cpp
+    mongoose_static
+    ryml::ryml
 )
 target_link_libraries(iotgw_gateway
   PRIVATE
-    yaml-cpp
+    ryml::ryml
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

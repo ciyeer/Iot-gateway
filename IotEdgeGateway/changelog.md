@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.6 - 2026-01-17
+
+### Changed
+- YAML 解析依赖从 yaml-cpp 切换为 rapidyaml（ryml），并通过 CMake FetchContent 获取与构建。
+- Web/MQTT 依赖的 mongoose 通过 CMake FetchContent 获取与构建（不再从 `src/vendor` 编译）。
+
+### Removed
+- 移除子模块与目录：`src/vendor/yaml-cpp/`。
+- 移除 vendor 目录：`src/vendor/`（不再在仓库中内置第三方源码）。
+
 ## 0.1.5 - 2026-01-16
 
 ### Added

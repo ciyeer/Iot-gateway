@@ -7,7 +7,10 @@
 #include <utility>
 #include <vector>
 
-#include <yaml-cpp/yaml.h>
+#include <fstream>
+
+#include <ryml.hpp>
+#include <ryml_std.hpp>
 
 namespace iotgw {
 namespace core {
@@ -20,8 +23,16 @@ public:
 
   bool LoadYamlFile(const std::string& file_path) {
     try {
-      const YAML::Node root = YAML::LoadFile(file_path);
-      if (!root) return false;
+      std::ifstream file(file_path, std::ios::in | std::ios::binary);
+      if (!file) return false;
+
+      std::string contents((std::istreambuf_iterator<char>(file)),
+                           std::istreambuf_iterator<char>());
+      if (contents.empty()) return false;
+
+      ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(contents));
+      const ryml::ConstNodeRef root = tree.rootref();
+      if (!root.valid()) return false;
       FlattenYaml(root, std::string());
       return true;
     } catch (...) {
@@ -108,31 +119,34 @@ private:
     return false;
   }
 
-  void FlattenYaml(const YAML::Node& node, const std::string& prefix) {
-    if (!node) return;
+  static inline std::string ToStdString(c4::csubstr s) {
+    return std::string(s.str, s.len);
+  }
 
-    if (node.IsScalar()) {
-      if (!prefix.empty()) data_[prefix] = node.Scalar();
+  void FlattenYaml(const ryml::ConstNodeRef& node, const std::string& prefix) {
+    if (!node.valid()) return;
+
+    if (node.has_val()) {
+      if (!prefix.empty()) data_[prefix] = ToStdString(node.val());
       return;
     }
 
-    if (node.IsMap()) {
-      for (auto it = node.begin(); it != node.end(); ++it) {
-        const YAML::Node k = it->first;
-        const YAML::Node v = it->second;
-        if (!k || !k.IsScalar()) continue;
-
-        const std::string ks = k.Scalar();
+    if (node.is_map()) {
+      for (ryml::ConstNodeRef child : node.children()) {
+        if (!child.has_key()) continue;
+        const std::string ks = ToStdString(child.key());
         const std::string next = prefix.empty() ? ks : (prefix + "." + ks);
-        FlattenYaml(v, next);
+        FlattenYaml(child, next);
       }
       return;
     }
 
-    if (node.IsSequence()) {
-      for (std::size_t i = 0; i < node.size(); ++i) {
+    if (node.is_seq()) {
+      std::size_t i = 0;
+      for (ryml::ConstNodeRef child : node.children()) {
         const std::string next = prefix + "[" + std::to_string(i) + "]";
-        FlattenYaml(node[i], next);
+        FlattenYaml(child, next);
+        ++i;
       }
       return;
     }
