@@ -1,3 +1,0 @@
-[submodule "IotEdgeGateway/src/vendor/yaml-cpp"]
-	path = IotEdgeGateway/src/vendor/yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp.git
