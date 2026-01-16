@@ -2,11 +2,12 @@
 
 #include <cctype>
 #include <cstdint>
-#include <fstream>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include <yaml-cpp/yaml.h>
 
 namespace iotgw {
 namespace core {
@@ -17,18 +18,15 @@ class ConfigManager {
 public:
   using Map = std::unordered_map<std::string, std::string>;
 
-  bool LoadKeyValueFile(const std::string& file_path) {
-    std::ifstream ifs(file_path.c_str());
-    if (!ifs) return false;
-
-    std::string line;
-    while (std::getline(ifs, line)) {
-      std::string k;
-      std::string v;
-      if (!ParseLine(line, k, v)) continue;
-      data_[std::move(k)] = std::move(v);
+  bool LoadYamlFile(const std::string& file_path) {
+    try {
+      const YAML::Node root = YAML::LoadFile(file_path);
+      if (!root) return false;
+      FlattenYaml(root, std::string());
+      return true;
+    } catch (...) {
+      return false;
     }
-    return true;
   }
 
   bool Has(const std::string& key) const {
@@ -75,31 +73,6 @@ public:
   const Map& Data() const { return data_; }
 
 private:
-  static inline void TrimInPlace(std::string& s) {
-    size_t b = 0;
-    while (b < s.size() && std::isspace(static_cast<unsigned char>(s[b]))) ++b;
-    size_t e = s.size();
-    while (e > b && std::isspace(static_cast<unsigned char>(s[e - 1]))) --e;
-    s = s.substr(b, e - b);
-  }
-
-  static inline bool ParseLine(std::string line, std::string& key, std::string& val) {
-    const auto hash = line.find('#');
-    if (hash != std::string::npos) line = line.substr(0, hash);
-
-    TrimInPlace(line);
-    if (line.empty()) return false;
-
-    const auto eq = line.find('=');
-    if (eq == std::string::npos) return false;
-
-    key = line.substr(0, eq);
-    val = line.substr(eq + 1);
-    TrimInPlace(key);
-    TrimInPlace(val);
-    return !key.empty();
-  }
-
   static inline bool ParseInt64(const std::string& s, std::int64_t& out) {
     if (s.empty()) return false;
     std::int64_t sign = 1;
@@ -133,6 +106,36 @@ private:
       return true;
     }
     return false;
+  }
+
+  void FlattenYaml(const YAML::Node& node, const std::string& prefix) {
+    if (!node) return;
+
+    if (node.IsScalar()) {
+      if (!prefix.empty()) data_[prefix] = node.Scalar();
+      return;
+    }
+
+    if (node.IsMap()) {
+      for (auto it = node.begin(); it != node.end(); ++it) {
+        const YAML::Node k = it->first;
+        const YAML::Node v = it->second;
+        if (!k || !k.IsScalar()) continue;
+
+        const std::string ks = k.Scalar();
+        const std::string next = prefix.empty() ? ks : (prefix + "." + ks);
+        FlattenYaml(v, next);
+      }
+      return;
+    }
+
+    if (node.IsSequence()) {
+      for (std::size_t i = 0; i < node.size(); ++i) {
+        const std::string next = prefix + "[" + std::to_string(i) + "]";
+        FlattenYaml(node[i], next);
+      }
+      return;
+    }
   }
 
 private:

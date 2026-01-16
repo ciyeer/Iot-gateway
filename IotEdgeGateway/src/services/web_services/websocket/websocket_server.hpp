@@ -15,8 +15,9 @@ namespace websocket {
 class MongooseServer {
 public:
   struct Options {
-    std::string listen_addr = "http://0.0.0.0:8000";
+    std::string listen_addr = "http://0.0.0.0:8080";
     std::string ws_path = "/ws";
+    std::string www_root = "/etc/iotgw/www";
   };
 
   using WsMessageHandler =
@@ -77,9 +78,9 @@ private:
         // In a real app, version should come from a VersionController or Config
         mg_http_reply(c, 200, "Content-Type: application/json\r\n", "{\"version\":\"0.1.0\"}\n");
       } else {
-        // Serve static files or 404
-        // For now, simple 404
-        mg_http_reply(c, 404, "", "Not Found\n");
+        struct mg_http_serve_opts opts{};
+        opts.root_dir = opt_.www_root.c_str();
+        mg_http_serve_dir(c, hm, &opts);
       }
     } else if (ev == MG_EV_WS_OPEN) {
       ws_conns_.push_back(c);

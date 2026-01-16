@@ -22,7 +22,7 @@ namespace iotgw {
 namespace gateway {
 
 struct Args {
-  std::string config_kv;
+  std::string config_yaml;
   std::string log_file = "logs/iotgw.log";
   std::string log_level = "info";
 
@@ -40,14 +40,14 @@ public:
     Args a = args;
 
     iotgw::core::common::config::ConfigManager cfg;
-    if (!a.config_kv.empty()) {
-      if (cfg.LoadKeyValueFile(a.config_kv)) {
+    if (!a.config_yaml.empty()) {
+      if (cfg.LoadYamlFile(a.config_yaml)) {
         std::string lf;
-        if (cfg.GetString("log_file", lf) && !lf.empty()) {
+        if (cfg.GetString("paths.log_file", lf) && !lf.empty()) {
           a.log_file = lf;
         }
         std::string ll;
-        if (cfg.GetString("log_level", ll) && !ll.empty()) {
+        if (cfg.GetString("logging.level", ll) && !ll.empty()) {
           a.log_level = ll;
         }
       }
@@ -89,9 +89,30 @@ public:
     logger->Info(std::string("current_version=") + v);
 
     iotgw::services::web_services::websocket::MongooseServer::Options web_opt;
-    std::string addr;
-    if (cfg.GetString("http_listen", addr) && !addr.empty()) {
-      web_opt.listen_addr = addr;
+    std::string http_host;
+    std::int64_t http_port = 0;
+    if (cfg.GetString("network.http_api.host", http_host) && !http_host.empty() &&
+        cfg.GetInt64("network.http_api.port", http_port) && http_port > 0 && http_port <= 65535) {
+      web_opt.listen_addr =
+          std::string("http://") + http_host + ":" + std::to_string(static_cast<int>(http_port));
+    } else {
+      std::string host2;
+      std::int64_t port2 = 0;
+      if (cfg.GetString("listen.host", host2) && !host2.empty() && cfg.GetInt64("listen.port", port2) &&
+          port2 > 0 && port2 <= 65535) {
+        web_opt.listen_addr =
+            std::string("http://") + host2 + ":" + std::to_string(static_cast<int>(port2));
+      }
+    }
+
+    std::string ws_path;
+    if (cfg.GetString("network.websocket.path", ws_path) && !ws_path.empty()) {
+      web_opt.ws_path = ws_path;
+    } else {
+      std::string path2;
+      if (cfg.GetString("listen.path", path2) && !path2.empty()) {
+        web_opt.ws_path = path2;
+      }
     }
     iotgw::services::web_services::websocket::MongooseServer web_server(web_opt, logger);
     if (!web_server.Start()) {
@@ -100,28 +121,59 @@ public:
 
     iotgw::core::device::protocol_adapters::mqtt::MqttClient mqtt_client(web_server.GetMgr(),
                                                                          logger);
-    std::string mqtt_url;
-    if (cfg.GetString("mqtt_url", mqtt_url) && !mqtt_url.empty()) {
+    bool mqtt_enabled = false;
+    (void)cfg.GetBool("mqtt.enabled", mqtt_enabled);
+    if (mqtt_enabled) {
       iotgw::core::device::protocol_adapters::mqtt::MqttClient::Options mo;
-      mo.url = mqtt_url;
-      cfg.GetString("mqtt_client_id", mo.client_id);
-      cfg.GetString("mqtt_user", mo.user);
-      cfg.GetString("mqtt_pass", mo.pass);
+      std::string mqtt_host;
+      std::int64_t mqtt_port = 0;
+      if ((cfg.GetString("mqtt.broker_host", mqtt_host) && !mqtt_host.empty() &&
+           cfg.GetInt64("mqtt.broker_port", mqtt_port) && mqtt_port > 0 && mqtt_port <= 65535) ||
+          (cfg.GetString("broker.host", mqtt_host) && !mqtt_host.empty() &&
+           cfg.GetInt64("broker.port", mqtt_port) && mqtt_port > 0 && mqtt_port <= 65535)) {
+        mo.url = std::string("mqtt://") + mqtt_host + ":" +
+                 std::to_string(static_cast<int>(mqtt_port));
+      } else {
+        mo.url = "mqtt://127.0.0.1:1883";
+      }
+
+      if (!(cfg.GetString("mqtt.client_id", mo.client_id) && !mo.client_id.empty())) {
+        (void)cfg.GetString("client.client_id", mo.client_id);
+      }
+      if (!(cfg.GetString("mqtt.username", mo.user) && !mo.user.empty())) {
+        (void)cfg.GetString("client.username", mo.user);
+      }
+      if (!(cfg.GetString("mqtt.password", mo.pass) && !mo.pass.empty())) {
+        (void)cfg.GetString("client.password", mo.pass);
+      }
 
       std::int64_t keepalive = 0;
-      if (cfg.GetInt64("mqtt_keepalive_sec", keepalive) && keepalive > 0 &&
+      if (((cfg.GetInt64("mqtt.keepalive_sec", keepalive)) ||
+           (cfg.GetInt64("client.keepalive_sec", keepalive))) &&
+          keepalive > 0 &&
           keepalive <= 65535) {
         mo.keepalive_sec = static_cast<std::uint16_t>(keepalive);
       }
       bool clean = true;
-      if (cfg.GetBool("mqtt_clean_session", clean)) mo.clean_session = clean;
+      if (!cfg.GetBool("mqtt.clean_session", clean)) {
+        (void)cfg.GetBool("client.clean_session", clean);
+      }
+      mo.clean_session = clean;
 
       (void) mqtt_client.Connect(mo);
 
       std::string sub_topic;
-      if (cfg.GetString("mqtt_sub_topic", sub_topic) && !sub_topic.empty()) {
-        (void) mqtt_client.Subscribe(sub_topic, 0);
+      if (!(cfg.GetString("mqtt.sub_topic", sub_topic) && !sub_topic.empty())) {
+        std::string topic_prefix;
+        if (!((cfg.GetString("mqtt.topic_prefix", topic_prefix) && !topic_prefix.empty()) ||
+              (cfg.GetString("topics.prefix", topic_prefix) && !topic_prefix.empty()))) {
+          topic_prefix.clear();
+        }
+        if (!topic_prefix.empty()) {
+          sub_topic = topic_prefix + "#";
+        }
       }
+      if (!sub_topic.empty()) (void) mqtt_client.Subscribe(sub_topic, 0);
 
       mqtt_client.SetMessageHandler([&web_server](const std::string& topic,
                                                   const std::string& payload) {

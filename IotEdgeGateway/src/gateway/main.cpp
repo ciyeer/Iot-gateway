@@ -13,12 +13,13 @@ static bool TakeValue(int& i, int argc, char** argv, std::string& out) {
 
 iotgw::gateway::Args ParseArgs(int argc, char** argv) {
   iotgw::gateway::Args out;
+  out.config_yaml = "config/environments/development.yaml";
   for (int i = 1; i < argc; ++i) {
     const std::string a = argv[i] ? std::string(argv[i]) : std::string();
 
-    if (a == "--config") {
+    if (a == "--yaml-config") {
       std::string v;
-      if (TakeValue(i, argc, argv, v)) out.config_kv = v;
+      if (TakeValue(i, argc, argv, v)) out.config_yaml = v;
     } else if (a == "--log-file") {
       std::string v;
       if (TakeValue(i, argc, argv, v)) out.log_file = v;

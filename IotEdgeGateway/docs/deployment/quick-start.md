@@ -34,11 +34,11 @@ rm -rf /home/ciyeer/iwork/IotEdgeGateway/build-wsl/Debug
 
 ### 2) 启动 HTTP/WebSocket 服务
 
-默认监听：`http://0.0.0.0:8000`
+默认监听：`http://0.0.0.0:8080`
 
 - HTTP：
   - `GET /api/health`
   - `GET /api/version`
 - WebSocket：`/ws`
 
-如需覆盖监听地址，可在 kv 配置中设置 `http_listen`，或使用 `--config <kv-file>` 载入配置。
+如需覆盖监听地址，可修改 YAML 配置中的 `network.http_api.host` / `network.http_api.port`，或使用 `--yaml-config <yaml-file>` 指定配置文件。

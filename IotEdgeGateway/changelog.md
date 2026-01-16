@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.5 - 2026-01-16
+
+### Added
+- Web 服务增加静态文件目录支持：默认从 `/etc/iotgw/www` 提供静态站点。
+
+### Changed
+- 配置加载方式切换为仅支持 YAML：移除 `--config` 参数与 KV 配置解析逻辑。
+- Web 服务默认监听端口调整为 `8080`（HTTP/WS 同端口）。
+- 构建系统强制要求内置 `src/vendor/yaml-cpp` 存在（缺失则 CMake 配置阶段直接失败）。
+- 更新部署/快速启动说明，对齐 YAML 配置与默认端口。
+
+### Fixed
+- 修复 yaml-cpp 在 GCC 6.x 交叉工具链下 `dragonbox.h` 的 `min/max` 编译失败问题。
+
 ## 0.1.4 - 2026-01-15
 
 ### Added
