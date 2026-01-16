@@ -89,8 +89,7 @@ IotEdgeGateway/
 │   ├── src/
 │   │   ├── core/
 │   │   ├── services/
-│   │   ├── gateway/
-│   │   └── vendor/
+│   │   └── gateway/
 │   ├── config/
 │   │   ├── environments/
 │   │   ├── network/
@@ -117,21 +116,23 @@ IotEdgeGateway/
 从仓库根目录执行：
 
 ```bash
-rm -rf build
-cmake -S IotEdgeGateway/IotEdgeGateway -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build -j
+rm -rf build-wsl/Debug
+cmake -S IotEdgeGateway/IotEdgeGateway -B build-wsl/Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-wsl/Debug -j
 ```
 
 产物：
-- `build/iotgw_gateway`
+- `build-wsl/Debug/iotgw_gateway`
 
-说明：如果你使用的是 aarch64 交叉编译工具链，生成的二进制需要拷贝到 RK3568（aarch64 Linux）上运行。
+说明：
+- 第一次配置会通过 CMake FetchContent 拉取并构建第三方依赖（rapidyaml、mongoose）。
+- 如果你使用的是 aarch64 交叉编译工具链，生成的二进制需要拷贝到 RK3568（aarch64 Linux）上运行。
 
 ### 2️⃣ 运行与验证接口
 
 在目标设备上启动后，默认监听：
-- HTTP：`http://<RK3568_IP>:8000/api/health`
-- WebSocket：`ws://<RK3568_IP>:8000/ws`
+- HTTP：`http://<RK3568_IP>:8080/api/health`
+- WebSocket：`ws://<RK3568_IP>:8080/ws`
 
 更完整的构建/部署说明请参考：`IotEdgeGateway/docs/deployment/`。
 
