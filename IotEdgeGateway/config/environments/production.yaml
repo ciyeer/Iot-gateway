@@ -27,4 +27,6 @@ mqtt:
   client_id: iotgw
   username: ""
   password: ""
+  keepalive_sec: 30
+  clean_session: true
   topic_prefix: "iotgw/"

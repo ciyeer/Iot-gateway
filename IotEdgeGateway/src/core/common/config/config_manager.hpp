@@ -22,6 +22,11 @@ public:
   using Map = std::unordered_map<std::string, std::string>;
 
   bool LoadYamlFile(const std::string& file_path) {
+    data_.clear();
+    return LoadYamlFileMerge(file_path);
+  }
+
+  bool LoadYamlFileMerge(const std::string& file_path) {
     try {
       std::ifstream file(file_path, std::ios::in | std::ios::binary);
       if (!file) return false;
