@@ -21,6 +21,7 @@
 #include "core/device/manager/device_manager.hpp"
 #include "core/device/protocol_adapters/mqtt_adapter/mqtt_adapter.hpp"
 #include "services/system_services/update/update_manager.hpp"
+#include "services/web_services/api/rest_api.hpp"
 #include "services/web_services/websocket/websocket_server.hpp"
 
 namespace iotgw {
@@ -165,125 +166,19 @@ public:
     const std::string rules_automation_file = config_root + "/rules/automation-rules.yaml";
     const std::string rules_alarm_file = config_root + "/rules/alarm-rules.yaml";
 
+    iotgw::services::web_services::api::ApiContext api_ctx;
+    api_ctx.base_path = cfg.GetStringOr("network.http_api.base_path", "/api");
+    api_ctx.version = v;
+    api_ctx.rules_automation_file = rules_automation_file;
+    api_ctx.rules_alarm_file = rules_alarm_file;
+    api_ctx.mqtt_topic_prefix = mqtt_topic_prefix;
+    api_ctx.device_registry = &device_registry;
+    api_ctx.rule_engine = &rule_engine;
+    api_ctx.mqtt_client = &mqtt_client;
+    api_ctx.logger = logger;
+
     web_server.SetHttpHandler([&](struct mg_connection* c, struct mg_http_message* hm) -> bool {
-      const std::string uri(hm->uri.buf, hm->uri.len);
-
-      if (mg_strcmp(hm->method, mg_str("GET")) == 0 && uri == "/api/health") {
-        mg_http_reply(c, 200, "Content-Type: application/json\r\n", "{\"status\":\"ok\"}\n");
-        return true;
-      }
-
-      if (mg_strcmp(hm->method, mg_str("GET")) == 0 && uri == "/api/version") {
-        const std::string body =
-            iotgw::core::common::json::Object({{"version", iotgw::core::common::json::Quote(v)}});
-        mg_http_reply(c, 200, "Content-Type: application/json\r\n", "%s\n", body.c_str());
-        return true;
-      }
-
-      if (mg_strcmp(hm->method, mg_str("GET")) == 0 && uri == "/api/devices") {
-        const std::string body = device_registry.ToJsonList();
-        mg_http_reply(c, 200, "Content-Type: application/json\r\n", "%s\n", body.c_str());
-        return true;
-      }
-
-      if (mg_strcmp(hm->method, mg_str("GET")) == 0 && StartsWith(uri, "/api/devices/")) {
-        const std::string id = uri.substr(std::string("/api/devices/").size());
-        std::string body;
-        if (!id.empty() && device_registry.ToJsonOne(id, body)) {
-          mg_http_reply(c, 200, "Content-Type: application/json\r\n", "%s\n", body.c_str());
-        } else {
-          mg_http_reply(c, 404, "Content-Type: application/json\r\n",
-                        "{\"error\":\"device_not_found\"}\n");
-        }
-        return true;
-      }
-
-      if (mg_strcmp(hm->method, mg_str("GET")) == 0 && uri == "/api/rules") {
-        const auto& rs = rule_engine.Rules();
-        std::string body;
-        body.reserve(256 + rs.size() * 128);
-        body.push_back('[');
-        bool first = true;
-        for (const auto& r : rs) {
-          if (!first) body.push_back(',');
-          first = false;
-          body += iotgw::core::common::json::Object({
-              {"id", iotgw::core::common::json::Quote(r.id)},
-              {"category", iotgw::core::common::json::Quote(r.category)},
-              {"enabled", iotgw::core::common::json::Bool(r.enabled)},
-              {"sensor_id", iotgw::core::common::json::Quote(r.when.sensor_id)},
-              {"op", iotgw::core::common::json::Quote(r.when.op)},
-              {"value", iotgw::core::common::json::Number(r.when.value)},
-          });
-        }
-        body.push_back(']');
-        mg_http_reply(c, 200, "Content-Type: application/json\r\n", "%s\n", body.c_str());
-        return true;
-      }
-
-      if (mg_strcmp(hm->method, mg_str("POST")) == 0 && uri == "/api/rules/reload") {
-        std::vector<iotgw::core::control::rule_engine::Rule> rules;
-        (void)LoadRulesFromFile(rules_automation_file, "automation", rules);
-        (void)LoadRulesFromFile(rules_alarm_file, "alarm", rules);
-        rule_engine.Clear();
-        rule_engine.AddRules(std::move(rules));
-        mg_http_reply(c, 200, "Content-Type: application/json\r\n", "{\"ok\":true}\n");
-        return true;
-      }
-
-      if (mg_strcmp(hm->method, mg_str("POST")) == 0 && StartsWith(uri, "/api/rules/") &&
-          (EndsWith(uri, "/enable") || EndsWith(uri, "/disable"))) {
-        const bool enable = EndsWith(uri, "/enable");
-        const std::string base = std::string("/api/rules/");
-        const std::string tail = enable ? std::string("/enable") : std::string("/disable");
-        const std::string id = uri.substr(base.size(), uri.size() - base.size() - tail.size());
-        const bool ok = !id.empty() && rule_engine.SetEnabled(id, enable);
-        const std::string body =
-            iotgw::core::common::json::Object({{"ok", iotgw::core::common::json::Bool(ok)}});
-        mg_http_reply(c, ok ? 200 : 404, "Content-Type: application/json\r\n", "%s\n", body.c_str());
-        return true;
-      }
-
-      if (mg_strcmp(hm->method, mg_str("POST")) == 0 && StartsWith(uri, "/api/actuators/") &&
-          EndsWith(uri, "/set")) {
-        const std::string base = std::string("/api/actuators/");
-        const std::string tail = std::string("/set");
-        const std::string id = uri.substr(base.size(), uri.size() - base.size() - tail.size());
-        if (id.empty()) {
-          mg_http_reply(c, 400, "Content-Type: application/json\r\n", "{\"error\":\"missing_id\"}\n");
-          return true;
-        }
-
-        std::string cmd_topic;
-        if (!device_registry.GetCommandTopic(id, cmd_topic)) {
-          cmd_topic = mqtt_topic_prefix.empty() ? (std::string("cmd/") + id) : (mqtt_topic_prefix + "cmd/" + id);
-        }
-
-        const std::string body_in(hm->body.buf, hm->body.len);
-        double num = 0.0;
-        bool has_num = mg_json_get_num(mg_str(body_in.c_str()), "$.value", &num);
-        std::string value_out;
-        if (has_num) {
-          value_out = FormatNumber(num);
-        } else {
-          char* s = mg_json_get_str(mg_str(body_in.c_str()), "$.value");
-          if (s != nullptr) value_out = s;
-          if (s != nullptr) mg_free(s);
-        }
-
-        if (value_out.empty()) {
-          mg_http_reply(c, 400, "Content-Type: application/json\r\n", "{\"error\":\"missing_value\"}\n");
-          return true;
-        }
-
-        const bool ok = mqtt_client.IsOpen() && mqtt_client.Publish(cmd_topic, value_out, 0, false);
-        const std::string body =
-            iotgw::core::common::json::Object({{"ok", iotgw::core::common::json::Bool(ok)}});
-        mg_http_reply(c, ok ? 200 : 503, "Content-Type: application/json\r\n", "%s\n", body.c_str());
-        return true;
-      }
-
-      return false;
+      return iotgw::services::web_services::api::HandleHttpRequest(c, hm, api_ctx);
     });
 
     if (mqtt_enabled) {

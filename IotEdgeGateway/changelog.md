@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.9 - 2026-01-20
+
+### Added
+- 新增 REST API 路由模块（`services/web_services/api`），集中管理 System/Device/Rule 三类接口处理逻辑。
+
+### Changed
+- 网关 HTTP Handler 从 `GatewayCore` 内联实现迁移到 REST API 路由模块，并通过上下文注入设备注册表、规则引擎与 MQTT 客户端。
+- HTTP API 支持从配置项 `network.http_api.base_path` 读取路由前缀（默认 `/api`，并兼容旧前缀回退）。
+- 构建系统将 Web REST API 实现加入 `iotgw_common` 静态库编译与链接。
+
 ## 0.1.8 - 2026-01-19
 
 ### Added

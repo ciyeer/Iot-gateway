@@ -37,6 +37,9 @@ add_library(iotgw_common STATIC
   src/core/common/config/config_validator.cpp
   src/core/device/manager/device_registry.cpp
   src/core/device/protocol_adapters/mqtt_adapter/mqtt_client.cpp
+  src/services/web_services/api/device_api.cpp
+  src/services/web_services/api/rule_api.cpp
+  src/services/web_services/api/system_api.cpp
   src/services/system_services/update/version_controller.cpp
 )
 
