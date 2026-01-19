@@ -6,6 +6,7 @@
 - 配置结构调整：将 `config/network/` 下的 MQTT/WebSocket 配置合并到 `config/environments/*.yaml`，运行时只需加载单个环境配置文件。
 - 配置加载逻辑简化：启动时不再自动加载 `config/network/*.yaml`。
 - `ConfigManager` 增加 YAML 合并加载接口（`LoadYamlFileMerge`），支持按顺序覆盖同名键。
+- VS Code CMake Tools 配置调整：`cmake.sourceDirectory` 使用 `${workspaceFolder}`，并启用打开工作区自动配置。
 
 ### Removed
 - 删除配置文件：`config/network/websocket.yaml`、`config/network/mqtt-broker.yaml`（已合并到环境配置）。
