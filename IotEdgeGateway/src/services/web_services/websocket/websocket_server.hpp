@@ -23,6 +23,9 @@ public:
   using WsMessageHandler =
       std::function<void(struct mg_connection* c, const std::string& message)>;
 
+  using HttpHandler =
+      std::function<bool(struct mg_connection* c, struct mg_http_message* hm)>;
+
   explicit MongooseServer(Options opt, std::shared_ptr<iotgw::core::common::log::Logger> logger)
       : opt_(std::move(opt)), logger_(std::move(logger)) {
     mg_mgr_init(&mgr_);
@@ -48,6 +51,7 @@ public:
   mg_mgr* GetMgr() { return &mgr_; }
 
   void SetWsMessageHandler(WsMessageHandler handler) { on_ws_msg_ = std::move(handler); }
+  void SetHttpHandler(HttpHandler handler) { on_http_ = std::move(handler); }
 
   void BroadcastText(const std::string& text) {
     for (auto* c : ws_conns_) {
@@ -70,7 +74,9 @@ private:
 
       if (logger_) logger_->Debug("HTTP request: " + uri);
 
-      if (mg_match(hm->uri, mg_str(opt_.ws_path.c_str()), NULL)) {
+      if (on_http_ && on_http_(c, hm)) {
+        return;
+      } else if (mg_match(hm->uri, mg_str(opt_.ws_path.c_str()), NULL)) {
         mg_ws_upgrade(c, hm, nullptr);
       } else if (mg_match(hm->uri, mg_str("/api/health"), NULL)) {
         mg_http_reply(c, 200, "Content-Type: application/json\r\n", "{\"status\":\"ok\"}\n");
@@ -109,6 +115,7 @@ private:
   Options opt_;
   std::shared_ptr<iotgw::core::common::log::Logger> logger_;
   struct mg_mgr mgr_;
+  HttpHandler on_http_;
   WsMessageHandler on_ws_msg_;
   std::vector<struct mg_connection*> ws_conns_;
 };

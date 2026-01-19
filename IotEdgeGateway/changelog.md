@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.8 - 2026-01-19
+
+### Added
+- 新增设备模型与注册表：维护设备列表、topic 映射、在线状态与最近一次上报信息。
+- 新增规则引擎最小可用实现：支持阈值条件判断与动作回调执行（`actuator_set`/`log`）。
+- Web 服务支持自定义 HTTP Handler，并在网关中接入管理 API：
+  - `GET /api/devices`、`GET /api/devices/<id>`
+  - `GET /api/rules`、`POST /api/rules/reload`
+  - `POST /api/rules/<id>/enable`、`POST /api/rules/<id>/disable`
+  - `POST /api/actuators/<id>/set`
+
+### Changed
+- 网关启动流程增加设备与规则配置加载：默认读取 `config/devices/*.yaml` 与 `config/rules/*.yaml`。
+- MQTT 上报处理增加设备状态更新与规则触发联动：满足条件时自动发布控制消息到 actuator 的命令 topic。
+- 构建系统将设备注册表实现加入 `iotgw_common` 静态库链接。
+
+### Fixed
+- 修复 rapidyaml(ryml) 弃用接口告警：将 `ConstNodeRef::valid()` 替换为 `invalid()` 判断。
+
 ## 0.1.7 - 2026-01-18
 
 ### Changed

@@ -4,16 +4,21 @@
 #include <csignal>
 #include <cstdint>
 #include <cerrno>
+#include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <sys/stat.h>
+#include <vector>
 
 #include "core/common/config/config_manager.hpp"
 #include "core/common/logger/logger.hpp"
 #include "core/common/utils/json_utils.hpp"
 #include "core/common/utils/time_utils.hpp"
+#include "core/control/rule_engine/rule_engine.hpp"
+#include "core/device/manager/device_manager.hpp"
 #include "core/device/protocol_adapters/mqtt_adapter/mqtt_adapter.hpp"
 #include "services/system_services/update/update_manager.hpp"
 #include "services/web_services/websocket/websocket_server.hpp"
@@ -88,6 +93,8 @@ public:
     const std::string v = update_mgr.GetCurrentVersionOr("unknown");
     logger->Info(std::string("current_version=") + v);
 
+    const std::string config_root = cfg.GetStringOr("paths.config_root", "config");
+
     iotgw::services::web_services::websocket::MongooseServer::Options web_opt;
     std::string http_host;
     std::int64_t http_port = 0;
@@ -119,10 +126,166 @@ public:
       logger->Error("Failed to start web server on " + web_opt.listen_addr);
     }
 
+    iotgw::core::device::manager::DeviceRegistry device_registry;
+    iotgw::core::control::rule_engine::RuleEngine rule_engine;
+
+    {
+      iotgw::core::common::config::ConfigManager dcfg;
+      (void)dcfg.LoadYamlFileMerge(config_root + "/devices/sensors.yaml");
+      (void)dcfg.LoadYamlFileMerge(config_root + "/devices/actuators.yaml");
+
+      std::string topic_prefix;
+      if (!((cfg.GetString("mqtt.topic_prefix", topic_prefix) && !topic_prefix.empty()) ||
+            (cfg.GetString("topics.prefix", topic_prefix) && !topic_prefix.empty()))) {
+        topic_prefix.clear();
+      }
+
+      LoadDevicesFromConfig(dcfg, topic_prefix, device_registry);
+    }
+
+    {
+      std::vector<iotgw::core::control::rule_engine::Rule> rules;
+      (void)LoadRulesFromFile(config_root + "/rules/automation-rules.yaml", "automation", rules);
+      (void)LoadRulesFromFile(config_root + "/rules/alarm-rules.yaml", "alarm", rules);
+      rule_engine.Clear();
+      rule_engine.AddRules(std::move(rules));
+    }
+
     iotgw::core::device::protocol_adapters::mqtt::MqttClient mqtt_client(web_server.GetMgr(),
                                                                          logger);
     bool mqtt_enabled = false;
     (void)cfg.GetBool("mqtt.enabled", mqtt_enabled);
+
+    std::string mqtt_topic_prefix;
+    if (!((cfg.GetString("mqtt.topic_prefix", mqtt_topic_prefix) && !mqtt_topic_prefix.empty()) ||
+          (cfg.GetString("topics.prefix", mqtt_topic_prefix) && !mqtt_topic_prefix.empty()))) {
+      mqtt_topic_prefix.clear();
+    }
+
+    const std::string rules_automation_file = config_root + "/rules/automation-rules.yaml";
+    const std::string rules_alarm_file = config_root + "/rules/alarm-rules.yaml";
+
+    web_server.SetHttpHandler([&](struct mg_connection* c, struct mg_http_message* hm) -> bool {
+      const std::string uri(hm->uri.buf, hm->uri.len);
+
+      if (mg_strcmp(hm->method, mg_str("GET")) == 0 && uri == "/api/health") {
+        mg_http_reply(c, 200, "Content-Type: application/json\r\n", "{\"status\":\"ok\"}\n");
+        return true;
+      }
+
+      if (mg_strcmp(hm->method, mg_str("GET")) == 0 && uri == "/api/version") {
+        const std::string body =
+            iotgw::core::common::json::Object({{"version", iotgw::core::common::json::Quote(v)}});
+        mg_http_reply(c, 200, "Content-Type: application/json\r\n", "%s\n", body.c_str());
+        return true;
+      }
+
+      if (mg_strcmp(hm->method, mg_str("GET")) == 0 && uri == "/api/devices") {
+        const std::string body = device_registry.ToJsonList();
+        mg_http_reply(c, 200, "Content-Type: application/json\r\n", "%s\n", body.c_str());
+        return true;
+      }
+
+      if (mg_strcmp(hm->method, mg_str("GET")) == 0 && StartsWith(uri, "/api/devices/")) {
+        const std::string id = uri.substr(std::string("/api/devices/").size());
+        std::string body;
+        if (!id.empty() && device_registry.ToJsonOne(id, body)) {
+          mg_http_reply(c, 200, "Content-Type: application/json\r\n", "%s\n", body.c_str());
+        } else {
+          mg_http_reply(c, 404, "Content-Type: application/json\r\n",
+                        "{\"error\":\"device_not_found\"}\n");
+        }
+        return true;
+      }
+
+      if (mg_strcmp(hm->method, mg_str("GET")) == 0 && uri == "/api/rules") {
+        const auto& rs = rule_engine.Rules();
+        std::string body;
+        body.reserve(256 + rs.size() * 128);
+        body.push_back('[');
+        bool first = true;
+        for (const auto& r : rs) {
+          if (!first) body.push_back(',');
+          first = false;
+          body += iotgw::core::common::json::Object({
+              {"id", iotgw::core::common::json::Quote(r.id)},
+              {"category", iotgw::core::common::json::Quote(r.category)},
+              {"enabled", iotgw::core::common::json::Bool(r.enabled)},
+              {"sensor_id", iotgw::core::common::json::Quote(r.when.sensor_id)},
+              {"op", iotgw::core::common::json::Quote(r.when.op)},
+              {"value", iotgw::core::common::json::Number(r.when.value)},
+          });
+        }
+        body.push_back(']');
+        mg_http_reply(c, 200, "Content-Type: application/json\r\n", "%s\n", body.c_str());
+        return true;
+      }
+
+      if (mg_strcmp(hm->method, mg_str("POST")) == 0 && uri == "/api/rules/reload") {
+        std::vector<iotgw::core::control::rule_engine::Rule> rules;
+        (void)LoadRulesFromFile(rules_automation_file, "automation", rules);
+        (void)LoadRulesFromFile(rules_alarm_file, "alarm", rules);
+        rule_engine.Clear();
+        rule_engine.AddRules(std::move(rules));
+        mg_http_reply(c, 200, "Content-Type: application/json\r\n", "{\"ok\":true}\n");
+        return true;
+      }
+
+      if (mg_strcmp(hm->method, mg_str("POST")) == 0 && StartsWith(uri, "/api/rules/") &&
+          (EndsWith(uri, "/enable") || EndsWith(uri, "/disable"))) {
+        const bool enable = EndsWith(uri, "/enable");
+        const std::string base = std::string("/api/rules/");
+        const std::string tail = enable ? std::string("/enable") : std::string("/disable");
+        const std::string id = uri.substr(base.size(), uri.size() - base.size() - tail.size());
+        const bool ok = !id.empty() && rule_engine.SetEnabled(id, enable);
+        const std::string body =
+            iotgw::core::common::json::Object({{"ok", iotgw::core::common::json::Bool(ok)}});
+        mg_http_reply(c, ok ? 200 : 404, "Content-Type: application/json\r\n", "%s\n", body.c_str());
+        return true;
+      }
+
+      if (mg_strcmp(hm->method, mg_str("POST")) == 0 && StartsWith(uri, "/api/actuators/") &&
+          EndsWith(uri, "/set")) {
+        const std::string base = std::string("/api/actuators/");
+        const std::string tail = std::string("/set");
+        const std::string id = uri.substr(base.size(), uri.size() - base.size() - tail.size());
+        if (id.empty()) {
+          mg_http_reply(c, 400, "Content-Type: application/json\r\n", "{\"error\":\"missing_id\"}\n");
+          return true;
+        }
+
+        std::string cmd_topic;
+        if (!device_registry.GetCommandTopic(id, cmd_topic)) {
+          cmd_topic = mqtt_topic_prefix.empty() ? (std::string("cmd/") + id) : (mqtt_topic_prefix + "cmd/" + id);
+        }
+
+        const std::string body_in(hm->body.buf, hm->body.len);
+        double num = 0.0;
+        bool has_num = mg_json_get_num(mg_str(body_in.c_str()), "$.value", &num);
+        std::string value_out;
+        if (has_num) {
+          value_out = FormatNumber(num);
+        } else {
+          char* s = mg_json_get_str(mg_str(body_in.c_str()), "$.value");
+          if (s != nullptr) value_out = s;
+          if (s != nullptr) mg_free(s);
+        }
+
+        if (value_out.empty()) {
+          mg_http_reply(c, 400, "Content-Type: application/json\r\n", "{\"error\":\"missing_value\"}\n");
+          return true;
+        }
+
+        const bool ok = mqtt_client.IsOpen() && mqtt_client.Publish(cmd_topic, value_out, 0, false);
+        const std::string body =
+            iotgw::core::common::json::Object({{"ok", iotgw::core::common::json::Bool(ok)}});
+        mg_http_reply(c, ok ? 200 : 503, "Content-Type: application/json\r\n", "%s\n", body.c_str());
+        return true;
+      }
+
+      return false;
+    });
+
     if (mqtt_enabled) {
       iotgw::core::device::protocol_adapters::mqtt::MqttClient::Options mo;
       std::string mqtt_host;
@@ -175,8 +338,48 @@ public:
       }
       if (!sub_topic.empty()) (void) mqtt_client.Subscribe(sub_topic, 0);
 
-      mqtt_client.SetMessageHandler([&web_server](const std::string& topic,
-                                                  const std::string& payload) {
+      mqtt_client.SetMessageHandler([&](const std::string& topic, const std::string& payload) {
+        const auto now_ms = iotgw::core::common::time::NowUnixMs();
+        std::string device_id;
+        (void)device_registry.UpsertMqttDeviceFromTopic(topic, payload, now_ms, device_id);
+
+        double sensor_value = 0.0;
+        bool has_value = TryParseSensorValue(payload, sensor_value);
+        if (has_value && !device_id.empty()) {
+          rule_engine.OnSensorValue(device_id, sensor_value,
+                                    [&](const iotgw::core::control::rule_engine::Rule& rule,
+                                        const iotgw::core::control::rule_engine::Action& action) {
+                                      if (action.type == "actuator_set") {
+                                        const std::string act_id = action.actuator_id;
+                                        if (act_id.empty()) return;
+                                        std::string cmd_topic;
+                                        if (!device_registry.GetCommandTopic(act_id, cmd_topic)) {
+                                          cmd_topic = mqtt_topic_prefix.empty()
+                                                          ? (std::string("cmd/") + act_id)
+                                                          : (mqtt_topic_prefix + "cmd/" + act_id);
+                                        }
+                                        const std::string vout = action.value;
+                                        if (!cmd_topic.empty() && mqtt_client.IsOpen()) {
+                                          (void)mqtt_client.Publish(cmd_topic, vout, 0, false);
+                                        }
+                                      } else if (action.type == "log") {
+                                        const std::string lvl = ToLower(action.level);
+                                        const std::string msg = action.message.empty()
+                                                                    ? (std::string("rule_fired: ") + rule.id)
+                                                                    : action.message;
+                                        if (lvl == "warn" || lvl == "warning") {
+                                          logger->Warn(msg);
+                                        } else if (lvl == "error") {
+                                          logger->Error(msg);
+                                        } else if (lvl == "debug") {
+                                          logger->Debug(msg);
+                                        } else {
+                                          logger->Info(msg);
+                                        }
+                                      }
+                                    });
+        }
+
         const std::string frame = iotgw::core::common::json::Object({
             {"type", iotgw::core::common::json::Quote("mqtt_msg")},
             {"topic", iotgw::core::common::json::Quote(topic)},
@@ -322,6 +525,134 @@ private:
       return true;
     }
     return false;
+  }
+
+  static bool StartsWith(const std::string& s, const std::string& prefix) {
+    return s.size() >= prefix.size() && s.compare(0, prefix.size(), prefix) == 0;
+  }
+
+  static bool EndsWith(const std::string& s, const std::string& suffix) {
+    return s.size() >= suffix.size() &&
+           s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+  }
+
+  static bool TryParseDoubleStrict(const std::string& s, double& out) {
+    if (s.empty()) return false;
+    char* end = nullptr;
+    const double v = std::strtod(s.c_str(), &end);
+    if (end == s.c_str()) return false;
+    while (end != nullptr && *end != '\0') {
+      if (*end != ' ' && *end != '\n' && *end != '\r' && *end != '\t') return false;
+      ++end;
+    }
+    out = v;
+    return true;
+  }
+
+  static std::string FormatNumber(double v) {
+    const double iv = std::llround(v);
+    if (std::fabs(v - iv) < 1e-9) return std::to_string(static_cast<long long>(iv));
+    std::string s = std::to_string(v);
+    while (!s.empty() && s.back() == '0') s.pop_back();
+    if (!s.empty() && s.back() == '.') s.pop_back();
+    if (s.empty()) return "0";
+    return s;
+  }
+
+  static bool TryParseSensorValue(const std::string& payload, double& out) {
+    if (TryParseDoubleStrict(payload, out)) return true;
+    if (payload.empty()) return false;
+    double v = 0.0;
+    if (mg_json_get_num(mg_str(payload.c_str()), "$.value", &v)) {
+      out = v;
+      return true;
+    }
+    return false;
+  }
+
+  static bool LoadRulesFromFile(const std::string& file_path, const std::string& category,
+                                std::vector<iotgw::core::control::rule_engine::Rule>& out_rules) {
+    iotgw::core::common::config::ConfigManager rcfg;
+    if (!rcfg.LoadYamlFile(file_path)) return false;
+
+    const std::string key = category + "_rules";
+    std::size_t i = 0;
+    while (true) {
+      const std::string base = key + "[" + std::to_string(i) + "].";
+      std::string id;
+      if (!(rcfg.GetString(base + "id", id) && !id.empty())) break;
+
+      iotgw::core::control::rule_engine::Rule r;
+      r.id = id;
+      r.category = category;
+
+      bool enabled = true;
+      if (rcfg.GetBool(base + "enabled", enabled)) r.enabled = enabled;
+
+      (void)rcfg.GetString(base + "when.sensor_id", r.when.sensor_id);
+      (void)rcfg.GetString(base + "when.op", r.when.op);
+
+      std::string value_s;
+      if (rcfg.GetString(base + "when.value", value_s)) {
+        double dv = 0.0;
+        if (TryParseDoubleStrict(value_s, dv)) r.when.value = dv;
+      }
+
+      std::size_t j = 0;
+      while (true) {
+        const std::string abase = base + "then[" + std::to_string(j) + "].";
+        std::string type;
+        if (!(rcfg.GetString(abase + "type", type) && !type.empty())) break;
+        iotgw::core::control::rule_engine::Action a;
+        a.type = type;
+        (void)rcfg.GetString(abase + "actuator_id", a.actuator_id);
+        (void)rcfg.GetString(abase + "value", a.value);
+        (void)rcfg.GetString(abase + "level", a.level);
+        (void)rcfg.GetString(abase + "message", a.message);
+        r.then.push_back(std::move(a));
+        ++j;
+      }
+
+      out_rules.push_back(std::move(r));
+      ++i;
+    }
+
+    return true;
+  }
+
+  static void LoadDevicesFromConfig(const iotgw::core::common::config::ConfigManager& cfg,
+                                   const std::string& topic_prefix,
+                                   iotgw::core::device::manager::DeviceRegistry& out) {
+    std::size_t i = 0;
+    while (true) {
+      const std::string base = std::string("sensors[") + std::to_string(i) + "].";
+      std::string id;
+      if (!(cfg.GetString(base + "id", id) && !id.empty())) break;
+      iotgw::core::device::model::DeviceEntity d;
+      d.id = id;
+      d.kind = "sensor";
+      (void)cfg.GetString(base + "protocol", d.transport);
+      d.telemetry_topic = topic_prefix.empty() ? (std::string("telemetry/") + id)
+                                               : (topic_prefix + "telemetry/" + id);
+      (void)out.Register(std::move(d));
+      ++i;
+    }
+
+    i = 0;
+    while (true) {
+      const std::string base = std::string("actuators[") + std::to_string(i) + "].";
+      std::string id;
+      if (!(cfg.GetString(base + "id", id) && !id.empty())) break;
+      iotgw::core::device::model::DeviceEntity d;
+      d.id = id;
+      d.kind = "actuator";
+      (void)cfg.GetString(base + "protocol", d.transport);
+      d.command_topic = topic_prefix.empty() ? (std::string("cmd/") + id) : (topic_prefix + "cmd/" + id);
+      d.telemetry_topic =
+          topic_prefix.empty() ? (std::string("state/") + id) : (topic_prefix + "state/" + id);
+      (void)out.Register(std::move(d));
+      ++i;
+    }
   }
 };
 

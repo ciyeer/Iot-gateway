@@ -37,7 +37,7 @@ public:
 
       ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(contents));
       const ryml::ConstNodeRef root = tree.rootref();
-      if (!root.valid()) return false;
+      if (root.invalid()) return false;
       FlattenYaml(root, std::string());
       return true;
     } catch (...) {
@@ -129,7 +129,7 @@ private:
   }
 
   void FlattenYaml(const ryml::ConstNodeRef& node, const std::string& prefix) {
-    if (!node.valid()) return;
+    if (node.invalid()) return;
 
     if (node.has_val()) {
       if (!prefix.empty()) data_[prefix] = ToStdString(node.val());
