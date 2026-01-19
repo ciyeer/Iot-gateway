@@ -16,17 +16,15 @@ network:
     port: 8080
     base_path: /api
   websocket:
-    host: 0.0.0.0
-    port: 9002
     path: /ws
 
 mqtt:
-  enabled: false
-  broker_host: 127.0.0.1
+  enabled: true
+  broker_host: 118.196.46.169
   broker_port: 1883
   client_id: iotgw-dev
-  username: ""
-  password: ""
+  username: "zg"
+  password: "12345678"
   keepalive_sec: 30
   clean_session: true
   topic_prefix: "iotgw/dev/"
