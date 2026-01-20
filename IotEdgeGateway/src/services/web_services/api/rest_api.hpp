@@ -16,17 +16,17 @@ namespace web_services {
 namespace api {
 
 struct ApiContext {
-  std::string base_path = "/api";
-  std::string version;
-  std::string rules_automation_file;
-  std::string rules_alarm_file;
-  std::string mqtt_topic_prefix;
+    std::string base_path = "/api";
+    std::string version;
+    std::string rules_automation_file;
+    std::string rules_alarm_file;
+    std::string mqtt_topic_prefix;
 
-  iotgw::core::device::manager::DeviceRegistry* device_registry = nullptr;
-  iotgw::core::control::rule_engine::RuleEngine* rule_engine = nullptr;
-  iotgw::core::device::protocol_adapters::mqtt::MqttClient* mqtt_client = nullptr;
+    iotgw::core::device::manager::DeviceRegistry* device_registry = nullptr;
+    iotgw::core::control::rule_engine::RuleEngine* rule_engine = nullptr;
+    iotgw::core::device::protocol_adapters::mqtt::MqttClient* mqtt_client = nullptr;
 
-  std::shared_ptr<iotgw::core::common::log::Logger> logger;
+    std::shared_ptr<iotgw::core::common::log::Logger> logger;
 };
 
 bool HandleHttpRequest(struct mg_connection* c, struct mg_http_message* hm, const ApiContext& ctx);
