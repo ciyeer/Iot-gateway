@@ -45,6 +45,7 @@ add_library(iotgw_common STATIC
 
 add_executable(iotgw_gateway
     src/gateway/main.cpp
+    src/gateway/gateway_core.cpp
 )
 
 target_link_libraries(iotgw_gateway
