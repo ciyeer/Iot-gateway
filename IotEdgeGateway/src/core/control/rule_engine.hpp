@@ -19,11 +19,11 @@ struct Condition {
 };
 
 struct Action {
-  std::string type;
-  std::string actuator_id;
-  std::string value;
-  std::string level;
-  std::string message;
+  	std::string type;
+  	std::string actuator_id;
+  	std::string value;
+  	std::string level;
+  	std::string message;
 };
 
 struct Rule {
