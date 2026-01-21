@@ -9,10 +9,10 @@ namespace device {
 namespace model {
 
 struct DeviceStatus {
-  bool online = false;
-  std::int64_t last_seen_ms = 0;
-  std::string last_payload;
-  std::string last_topic;
+    bool online = false;
+    std::int64_t last_seen_ms = 0;
+    std::string last_payload;
+    std::string last_topic;
 };
 
 }  // namespace model

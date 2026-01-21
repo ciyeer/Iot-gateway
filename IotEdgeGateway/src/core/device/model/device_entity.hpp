@@ -11,12 +11,12 @@ namespace device {
 namespace model {
 
 struct DeviceEntity {
-  std::string id;
-  std::string kind;
-  std::string transport;
-  std::string telemetry_topic;
-  std::string command_topic;
-  DeviceStatus status;
+    std::string id;
+    std::string kind;
+    std::string transport;
+    std::string telemetry_topic;
+    std::string command_topic;
+    DeviceStatus status;
 };
 
 }  // namespace model
