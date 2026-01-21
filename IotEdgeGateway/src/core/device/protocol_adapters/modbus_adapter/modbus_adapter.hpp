@@ -39,7 +39,7 @@ public:
     struct Options {
         std::string host;
         std::uint16_t port = 502;
-  };
+    };
 
     explicit ModbusTcpAdapter(Options opt, std::shared_ptr<iotgw::core::common::log::Logger> logger);
 
