@@ -16,10 +16,20 @@ bool DeviceRegistry::Register(model::DeviceEntity device) {
   const std::string id = device.id;
   auto it = by_id_.find(id);
   if (it != by_id_.end()) {
-    it->second.kind = device.kind;
-    it->second.transport = device.transport;
-    it->second.telemetry_topic = device.telemetry_topic;
-    it->second.command_topic = device.command_topic;
+    const std::string old_telemetry = it->second.telemetry_topic;
+    const std::string old_command = it->second.command_topic;
+
+    it->second.kind = std::move(device.kind);
+    it->second.transport = std::move(device.transport);
+    it->second.telemetry_topic = std::move(device.telemetry_topic);
+    it->second.command_topic = std::move(device.command_topic);
+
+    if (!old_telemetry.empty() && old_telemetry != it->second.telemetry_topic) {
+      telemetry_topic_to_id_.erase(old_telemetry);
+    }
+    if (!old_command.empty() && old_command != it->second.command_topic) {
+      command_topic_to_id_.erase(old_command);
+    }
   } else {
     by_id_.emplace(id, std::move(device));
   }

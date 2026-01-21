@@ -8,15 +8,15 @@ namespace device {
 namespace protocol_adapters {
 namespace modbus {
 
-ModbusRtuAdapter::ModbusRtuAdapter(Options opt,
+ModbusTcpAdapter::ModbusTcpAdapter(Options opt,
                                    std::shared_ptr<iotgw::core::common::log::Logger> logger)
     : opt_(std::move(opt)), logger_(std::move(logger)) {}
 
-std::string ModbusRtuAdapter::Name() const { return "modbus_rtu"; }
+std::string ModbusTcpAdapter::Name() const { return "modbus_tcp"; }
 
-bool ModbusRtuAdapter::Start() { return false; }
+bool ModbusTcpAdapter::Start() { return false; }
 
-void ModbusRtuAdapter::Stop() {}
+void ModbusTcpAdapter::Stop() {}
 
 }  // namespace modbus
 }  // namespace protocol_adapters
