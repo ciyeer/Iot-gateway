@@ -91,3 +91,4 @@ inline bool RuleEngine::Eval(const Condition& c, double v) {
 }  // namespace control
 }  // namespace core
 }  // namespace iotgw
+

@@ -6,7 +6,7 @@
 #include "mongoose.h"
 
 #include "core/common/logger/logger.hpp"
-#include "core/control/rule_engine/rule_engine.hpp"
+#include "core/control/rule_engine.hpp"
 #include "core/device/manager/device_manager.hpp"
 #include "core/device/protocol_adapters/mqtt_adapter/mqtt_adapter.hpp"
 

@@ -8,6 +8,7 @@
 
 ### Changed
 - `DeviceRegistry::Register()` 在设备 topic 变更时同步清理旧映射，避免脏 topic→device 关系残留。
+- 扁平化 `core/control` 目录结构：将 `core/control/rule_engine/rule_engine.hpp` 上移为 `core/control/rule_engine.hpp`，并更新相关 include。
 
 ### Removed
 - 删除未使用的占位模块：`core/data/`。
