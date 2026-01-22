@@ -52,6 +52,7 @@ target_link_libraries(iotgw_gateway
   PRIVATE
       iotgw_common
       mongoose_static
+      ryml::ryml
 )
 
 target_include_directories(iotgw_common
@@ -62,10 +63,6 @@ target_include_directories(iotgw_common
 target_link_libraries(iotgw_common
   PRIVATE
       mongoose_static
-      ryml::ryml
-)
-target_link_libraries(iotgw_gateway
-  PRIVATE
       ryml::ryml
 )
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.11 - 2026-01-22
+
+### Changed
+- VS Code CMake Tools 构建目录调整：按 Kit 与 BuildType 分层输出（`build/<kit>/<Debug|Release>`），便于同时维护 x86_64 与 aarch64 两套构建。
+- CMake 配置精简：合并 `iotgw_gateway` 的重复 `target_link_libraries()` 调用。
+
+### Removed
+- 删除未使用的空目录：`core/media/`。
+
 ## 0.1.10 - 2026-01-21
 
 ### Added

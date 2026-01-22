@@ -1,0 +1,7 @@
+{
+	"cmake.sourceDirectory": "${workspaceFolder}/IotEdgeGateway",
+	"cmake.cmakePath": "/usr/local/bin/cmake",
+	"cmake.generator": "Ninja",
+	"cmake.buildDirectory": "${workspaceFolder}/build/${buildKit}/${buildType}",
+	"cmake.configureOnOpen": true
+}
