@@ -10,7 +10,7 @@
 - 删除未使用的空目录：`core/media/`。
 
 ## 0.1.10 - 2026-01-21
-
+ 
 ### Added
 - 恢复并补齐设备协议适配器骨架：`core/device/protocol_adapters/adapter_base.hpp`、`protocol_adapters/zigbee_adapter/`、`protocol_adapters/modbus_adapter/`。
 - Modbus 适配器增加 TCP 占位实现：`protocol_adapters/modbus_adapter/modbus_tcp.cpp`。
