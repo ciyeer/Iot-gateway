@@ -48,8 +48,6 @@ Thumbs.db
 # CMake / Ninja build outputs
 build/
 build-*/
-build-wsl/
-build-wsl-*/
 cmake-build-*/
 CMakeFiles/
 CMakeCache.txt
