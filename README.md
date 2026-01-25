@@ -134,6 +134,51 @@ cmake --build build-wsl/Debug -j
 - HTTP：`http://<RK3568_IP>:8080/api/health`
 - WebSocket：`ws://<RK3568_IP>:8080/ws`
 
+### 3️⃣ MQTT 联调（网关发布/订阅测试）
+
+#### 3.1 配置 MQTT
+
+在配置文件中启用并填写 MQTT Broker 信息：
+- `IotEdgeGateway/IotEdgeGateway/config/environments/development.yaml`
+  - `mqtt.enabled: true`
+  - `mqtt.broker_host` / `mqtt.broker_port`
+  - `mqtt.username` / `mqtt.password`（如需要）
+  - `mqtt.topic_prefix`（例如：`iotgw/dev/`）
+
+#### 3.2 MQTTX 订阅（看网关发出的消息）
+
+在 MQTTX 连接到同一个 Broker 后订阅：
+- 全部：`<topic_prefix>#`（例如 `iotgw/dev/#`）
+- 只看命令：`<topic_prefix>cmd/#`（例如 `iotgw/dev/cmd/#`）
+
+#### 3.3 网关发布（2 种方式）
+
+- 方式 A：HTTP 触发发布（用于 actuator 命令）
+  - `POST /api/actuators/<actuator_id>/set`
+  - 示例：
+
+```bash
+curl -sS -X POST "http://127.0.0.1:8080/api/actuators/relay_1/set" \
+  -H "Content-Type: application/json" \
+  -d '{"value": 1}'
+```
+
+  - 典型发布 topic：`<topic_prefix>cmd/<actuator_id>`（例如 `iotgw/dev/cmd/relay_1`）
+
+- 方式 B：WebSocket 直发（发布任意 topic/payload）
+  - 连接：`ws://127.0.0.1:8080/ws`
+  - 发送：`{"topic":"<topic>","payload":"<payload>"}`
+
+#### 3.4 网关订阅（从 MQTTX 发布，让网关收到）
+
+网关启动后会订阅：
+- `mqtt.sub_topic`（若配置）
+- 否则默认：`<topic_prefix>#`
+
+用 MQTTX 发布到 `<topic_prefix>` 下任意 topic（例如 `iotgw/dev/sensors/temp_1`），网关日志里会出现：
+- `MQTT rx topic=... payload_len=...`
+- `MQTT rx payload=...`
+
 更完整的构建/部署说明请参考：`IotEdgeGateway/docs/deployment/`。
 
 ---

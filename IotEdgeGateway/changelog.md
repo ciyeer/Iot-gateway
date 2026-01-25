@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.12 - 2026-01-25
+
+### Added
+- 网关 MQTT 消息回调增加接收日志：输出 topic、payload 长度与完整 payload（用于排查 Mongoose 调试日志截断带来的误判）。
+
+### Changed
+- README 快速启动补充 MQTT 联调步骤：MQTTX 订阅、网关通过 HTTP/WebSocket 发布、以及 MQTTX 发布让网关订阅验证。
+
 ## 0.1.11 - 2026-01-22
 
 ### Changed
