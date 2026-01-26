@@ -38,7 +38,7 @@
 │  Web Server: mongoose        │
 │  Device Manager              │
 │  Protocol Adapter (Zigbee/MQTT/UART) │
-│  Media Service (mjpg/gstreamer)      │
+│  Media Service (mjpg-streamer/gstreamer)      │
 │  Data Center (SQLite)                │
 │  System Service (systemd)            │
 └───────────────▲─────────────┘
@@ -116,13 +116,13 @@ IotEdgeGateway/
 从仓库根目录执行：
 
 ```bash
-rm -rf build-wsl/Debug
-cmake -S IotEdgeGateway/IotEdgeGateway -B build-wsl/Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build-wsl/Debug -j
+rm -rf build/Debug
+cmake -S IotEdgeGateway/IotEdgeGateway -B build/Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build build/Debug -j
 ```
 
 产物：
-- `build-wsl/Debug/iotgw_gateway`
+- `build/Debug/iotgw_gateway`
 
 说明：
 - 第一次配置会通过 CMake FetchContent 拉取并构建第三方依赖（rapidyaml、mongoose）。
@@ -241,7 +241,7 @@ curl -sS -X POST "http://127.0.0.1:8080/api/actuators/relay_1/set" \
 
 ```
 rk3568, embedded-linux, iot-gateway, mqtt, zigbee,
-mongoose, gstreamer, qt6, webserver, edge-computing
+mongoose, gstreamer, mpeg-streamer, qt6, webserver, edge-computing
 ```
 
 ---
