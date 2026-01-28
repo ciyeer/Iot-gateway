@@ -9,16 +9,20 @@
 From repository root:
 
 ```bash
-rm -rf /home/ciyeer/iwork/IotEdgeGateway/build-wsl/Debug
+ARCH=x86_64        # 或 aarch64
+BUILD_TYPE=Debug   # 或 Release
+BUILD_DIR=/home/ciyeer/iwork/IotEdgeGateway/build/${ARCH}/${BUILD_TYPE}
+
+rm -rf "${BUILD_DIR}"
 /usr/local/bin/cmake -S /home/ciyeer/iwork/IotEdgeGateway/IotEdgeGateway \
-  -B /home/ciyeer/iwork/IotEdgeGateway/build-wsl/Debug \
-  -G Ninja -DCMAKE_BUILD_TYPE=Debug
-/usr/local/bin/cmake --build /home/ciyeer/iwork/IotEdgeGateway/build-wsl/Debug -j
+  -B "${BUILD_DIR}" \
+  -G Ninja -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
+/usr/local/bin/cmake --build "${BUILD_DIR}" -j
 ```
 
 ## Artifacts
-- 可执行程序：`iotgw_gateway`（位于 `build-wsl/Debug/` 下）
-- 静态库：`libiotgw_common.a`（位于 `build-wsl/Debug/` 下）
+- 可执行程序：`iotgw_gateway`（位于 `build/<架构>/<Debug|Release>/` 下）
+- 静态库：`libiotgw_common.a`（位于 `build/<架构>/<Debug|Release>/` 下）
 
 说明：如果你使用的是 aarch64 交叉编译工具链，生成的 `iotgw_gateway` 需要拷贝到 RK3568（aarch64 Linux）上运行，不能直接在 x86_64 的 WSL 中执行。
 

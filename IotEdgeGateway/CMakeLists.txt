@@ -32,6 +32,26 @@ FetchContent_Declare(ryml
 )
 FetchContent_MakeAvailable(ryml)
 
+FetchContent_Declare(rapidjson
+    GIT_REPOSITORY https://github.com/Tencent/rapidjson.git
+    GIT_TAG v1.1.0
+    GIT_SHALLOW FALSE
+)
+
+FetchContent_GetProperties(rapidjson)
+if (NOT rapidjson_POPULATED)
+  FetchContent_Populate(rapidjson)
+endif()
+
+if (NOT TARGET rapidjson)
+  add_library(rapidjson INTERFACE)
+  target_include_directories(rapidjson INTERFACE ${rapidjson_SOURCE_DIR}/include)
+endif()
+
+if (NOT TARGET rapidjson::rapidjson)
+  add_library(rapidjson::rapidjson ALIAS rapidjson)
+endif()
+
 add_library(iotgw_common STATIC
     src/core/common/logger/file_logger.cpp
     src/core/common/config/config_validator.cpp
@@ -64,6 +84,7 @@ target_link_libraries(iotgw_common
   PRIVATE
       mongoose_static
       ryml::ryml
+      rapidjson::rapidjson
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

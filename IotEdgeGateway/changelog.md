@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.13 - 2026-01-28
+
+### Added
+- 引入 RapidJSON（header-only）作为 C++ JSON 解析库，并通过 CMake FetchContent 集成。
+
+### Changed
+- RapidJSON 集成方式调整为仅拉取源码并以 INTERFACE target 暴露 include 目录，避免其子工程 CMake policy/deprecation 警告干扰构建输出。
+- 开发环境示例配置的 MQTT broker 默认切换为本地地址（用于“RK3568 本地 broker + 云端桥接”的方案）。
+
 ## 0.1.12 - 2026-01-25
 
 ### Added
