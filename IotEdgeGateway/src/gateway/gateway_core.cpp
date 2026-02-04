@@ -31,48 +31,50 @@ namespace gateway {
 namespace {
 
 static std::atomic<bool>& RunningFlag() {
-  static std::atomic<bool> running{true};
-  return running;
+    static std::atomic<bool> running{true};
+    return running;
 }
 
 static void HandleSignal(int) {
-  RunningFlag().store(false);
+    RunningFlag().store(false);
 }
 
 static std::string DirName(const std::string& p) {
-  const auto pos = p.find_last_of('/');
-  if (pos == std::string::npos) return std::string();
-  if (pos == 0) return std::string("/");
-  return p.substr(0, pos);
+    const auto pos = p.find_last_of('/');
+    if (pos == std::string::npos) return std::string();
+    if (pos == 0) return std::string("/");
+    return p.substr(0, pos);
 }
 
 static bool CreateDirectories(const std::string& dir) {
-  if (dir.empty()) return true;
+    if (dir.empty()) return true;
 
-  std::string path;
-  size_t i = 0;
-  if (dir[0] == '/') {
-    path = "/";
-    i = 1;
-  }
-
-  while (i <= dir.size()) {
-    const auto j = dir.find('/', i);
-    const std::string part = (j == std::string::npos) ? dir.substr(i) : dir.substr(i, j - i);
-    if (!part.empty()) {
-      if (path.size() > 1 && path.back() != '/') path.push_back('/');
-      path += part;
-
-      if (::mkdir(path.c_str(), 0755) != 0) {
-        if (errno != EEXIST) return false;
-      }
+    std::string path;
+    size_t i = 0;
+    if (dir[0] == '/') {
+        path = "/";
+        i = 1;
     }
 
-    if (j == std::string::npos) break;
-    i = j + 1;
-  }
+    while (i <= dir.size()) {
+        const auto j = dir.find('/', i);
+        const std::string part = (j == std::string::npos) ? dir.substr(i) : dir.substr(i, j - i);
+        if (!part.empty()) {
+            if (path.size() > 1 && path.back() != '/') path.push_back('/');
+            path += part;
 
-  return true;
+            if (::mkdir(path.c_str(), 0755) != 0) {
+                if (errno != EEXIST) return false;
+            }
+        }
+
+        if (j == std::string::npos) {
+            break;
+        }
+        i = j + 1;
+    }
+
+    return true;
 }
 
 static std::string ToLower(std::string s) {
