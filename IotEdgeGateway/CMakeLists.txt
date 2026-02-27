@@ -8,11 +8,17 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(FetchContent)
 
+if (NOT DEFINED FETCHCONTENT_BASE_DIR)
+  set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/../build/_deps" CACHE PATH "" FORCE)
+endif()
+set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "" FORCE)
+
 set(MG_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(mongoose
     GIT_REPOSITORY https://github.com/cesanta/mongoose.git
     GIT_TAG 7.20
-    GIT_SHALLOW FALSE
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable(mongoose)
 
@@ -28,14 +34,16 @@ set(RYML_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(ryml
     GIT_REPOSITORY https://github.com/biojppm/rapidyaml.git
     GIT_TAG v0.10.0
-    GIT_SHALLOW FALSE
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
 )
 FetchContent_MakeAvailable(ryml)
 
 FetchContent_Declare(rapidjson
     GIT_REPOSITORY https://github.com/Tencent/rapidjson.git
     GIT_TAG v1.1.0
-    GIT_SHALLOW FALSE
+    GIT_SHALLOW TRUE
+    GIT_PROGRESS TRUE
 )
 
 FetchContent_GetProperties(rapidjson)
