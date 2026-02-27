@@ -1,5 +1,5 @@
 {
 	"cmake.sourceDirectory": "${workspaceFolder}/IotEdgeGateway",
-	"cmake.buildDirectory": "${workspaceFolder}/build/${buildKit}/${buildType}",
+	"cmake.buildDirectory": "${workspaceFolder}/build/${variant:arch}/${variant:buildType}",
 	"cmake.configureOnOpen": true
 }
