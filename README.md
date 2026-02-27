@@ -102,7 +102,7 @@ IotEdgeGateway/
 │   ├── build-deploy/
 │   │   ├── docker/
 │   │   └── deploy/
-│   └── changelog.md
+│   └── docs/changelog.md
 ├── LICENSE
 └── README.md
 ```
@@ -117,7 +117,7 @@ IotEdgeGateway/
 
 ```bash
 rm -rf build/Debug
-cmake -S IotEdgeGateway/IotEdgeGateway -B build/Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake -S IotEdgeGateway -B build/Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
 cmake --build build/Debug -j
 ```
 
