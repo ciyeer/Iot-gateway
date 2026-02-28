@@ -65,13 +65,13 @@ fi
 SOURCE_DIR="IotEdgeGateway"
 BUILD_DIR="build/${ARCH}/${BUILD_TYPE_LOWER}"
 
-echo "=========================================="
+echo "=============================================================================="
 echo "Configuring Build"
 echo "Architecture : $ARCH (OSX: $OSX_ARCH)"
 echo "Build Type   : $BUILD_TYPE (CMake: $CMAKE_BUILD_TYPE)"
 echo "Source Dir   : $SOURCE_DIR"
 echo "Build Dir    : $BUILD_DIR"
-echo "=========================================="
+echo "=============================================================================="
 
 # 如果指定了清理，则删除构建目录
 if [ "$CLEAN" -eq 1 ]; then
