@@ -1,0 +1,22 @@
+[
+  {
+    "name": "aarch64",
+    "compilers": {
+      "C": "/usr/bin/clang",
+      "CXX": "/usr/bin/clang++"
+    },
+    "cmakeSettings": {
+      "CMAKE_OSX_ARCHITECTURES": "arm64"
+    }
+  },
+  {
+    "name": "x86_64",
+    "compilers": {
+      "C": "/usr/bin/clang",
+      "CXX": "/usr/bin/clang++"
+    },
+    "cmakeSettings": {
+      "CMAKE_OSX_ARCHITECTURES": "x86_64"
+    }
+  }
+]

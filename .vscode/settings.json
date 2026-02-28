@@ -1,5 +1,22 @@
 {
 	"cmake.sourceDirectory": "${workspaceFolder}/IotEdgeGateway",
-	"cmake.buildDirectory": "${workspaceFolder}/build/${variant:arch}/${variant:buildType}",
+	"cmake.buildDirectory": "${workspaceFolder}/build/${buildKit}/${variant:buildType}",
+	"cmake.defaultVariants": {
+		"buildType": {
+			"default": "debug",
+			"choices": {
+				"debug": {
+					"short": "Debug",
+					"long": "Debug build",
+					"buildType": "Debug"
+				},
+				"release": {
+					"short": "Release",
+					"long": "Release build",
+					"buildType": "Release"
+				}
+			}
+		}
+	},
 	"cmake.configureOnOpen": true
 }

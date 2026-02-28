@@ -6,16 +6,17 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include(FetchContent)
-
 if (NOT DEFINED FETCHCONTENT_BASE_DIR)
-  set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/../build/_deps" CACHE PATH "" FORCE)
+  set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/_deps" CACHE PATH "")
 endif()
 set(FETCHCONTENT_UPDATES_DISCONNECTED ON CACHE BOOL "" FORCE)
 
+include(FetchContent)
+
 set(MG_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(mongoose
-    GIT_REPOSITORY https://github.com/cesanta/mongoose.git
+    GIT_REPOSITORY https://gitee.com/mirrors/mongoose.git
+    #GIT_REPOSITORY https://github.com/cesanta/mongoose.git
     GIT_TAG 7.20
     GIT_SHALLOW TRUE
     GIT_PROGRESS TRUE
@@ -31,33 +32,15 @@ target_include_directories(mongoose_static
 )
 
 set(RYML_INSTALL OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(ryml
-    GIT_REPOSITORY https://github.com/biojppm/rapidyaml.git
-    GIT_TAG v0.10.0
-    GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
-)
-FetchContent_MakeAvailable(ryml)
-
-FetchContent_Declare(rapidjson
-    GIT_REPOSITORY https://github.com/Tencent/rapidjson.git
-    GIT_TAG v1.1.0
-    GIT_SHALLOW TRUE
-    GIT_PROGRESS TRUE
-)
-
-FetchContent_GetProperties(rapidjson)
-if (NOT rapidjson_POPULATED)
-  FetchContent_Populate(rapidjson)
-endif()
-
-if (NOT TARGET rapidjson)
-  add_library(rapidjson INTERFACE)
-  target_include_directories(rapidjson INTERFACE ${rapidjson_SOURCE_DIR}/include)
-endif()
-
-if (NOT TARGET rapidjson::rapidjson)
-  add_library(rapidjson::rapidjson ALIAS rapidjson)
+find_package(ryml CONFIG QUIET)
+if (NOT ryml_FOUND)
+  FetchContent_Declare(ryml
+      GIT_REPOSITORY https://gitee.com/mirrors/rapidyaml.git
+      GIT_TAG v0.10.0
+      GIT_SHALLOW TRUE
+      GIT_PROGRESS TRUE
+  )
+  FetchContent_MakeAvailable(ryml)
 endif()
 
 add_library(iotgw_common STATIC
@@ -92,7 +75,6 @@ target_link_libraries(iotgw_common
   PRIVATE
       mongoose_static
       ryml::ryml
-      rapidjson::rapidjson
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")

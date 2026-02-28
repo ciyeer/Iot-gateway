@@ -26,28 +26,29 @@
 ## 🧱 系统架构 · System Architecture
 
 ```
-┌──────────────────────────────┐
-│        Web / Qt Client        │
-│  • 设备控制  • 实时视频  • 数据曲线  │
-│  • WebSocket 实时推送            │
-└───────────────▲─────────────┘
-                │ HTTP / WS / RTSP
-┌───────────────┴─────────────┐
-│       RK3568 IoT 网关        │
-│ ============================ │
-│  Web Server: mongoose        │
-│  Device Manager              │
-│  Protocol Adapter (Zigbee/MQTT/UART) │
-│  Media Service (mjpg-streamer/gstreamer)      │
-│  Data Center (SQLite)                │
-│  System Service (systemd)            │
-└───────────────▲─────────────┘
-                │ MQTT / Zigbee / UART
-┌───────────────┴─────────────┐
-│         MCU Nodes            │
-│  • LED / 舵机 / 传感器        │
-│  • 心跳上报 / 状态同步        │
-└──────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│               Web / Qt Client                │
+│ • 设备控制    • 实时视频    • 数据曲线   • 推送   │
+└──────────────────────▲───────────────────────┘
+                       │ HTTP / WS / RTSP
+                       ▼
+┌──────────────────────┴───────────────────────┐
+│              RK3568 IoT Gateway              │
+│ ============================================ │
+│  Web Server:      Mongoose                   │
+│  Device Manager:  Core Logic                 │
+│  Protocol:        Zigbee / MQTT / UART       │
+│  Media Service:   mjpg-streamer / GStreamer  │
+│  Data Center:     SQLite                     │
+│  System Service:  systemd                    │
+└──────────────────────▲───────────────────────┘
+                       │ MQTT / Zigbee / UART
+                       ▼
+┌──────────────────────┴───────────────────────┐
+│                  MCU Nodes                   │
+│        • LED      • 舵机      • 传感器         │
+│        • 心跳上报   • 状态同步                  │
+└──────────────────────────────────────────────┘
 ```
 
 ---
@@ -113,18 +114,52 @@ IotEdgeGateway/
 
 ### 1️⃣ 构建
 
-从仓库根目录执行：
+本项目提供了一个便捷的 `build.sh` 脚本，用于统一管理不同架构和配置的构建过程。
+
+**基本用法：**
 
 ```bash
-rm -rf build/Debug
-cmake -S IotEdgeGateway -B build/Debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
-cmake --build build/Debug -j
+./build.sh [选项]
 ```
 
-产物：
-- `build/Debug/iotgw_gateway`
+**参数说明：**
 
-说明：
+| 短选项 | 长选项 | 说明 | 默认值 |
+| :--- | :--- | :--- | :--- |
+| `-a <架构>` | `--arch <架构>` | 指定目标 CPU 架构。支持 `aarch64` (ARM64) 或 `x86_64` (Intel/AMD64)。 | `aarch64` |
+| `-d` | `--debug` | 以 **Debug** 模式构建（默认）。 | (默认) |
+| `-r` | `--release` | 以 **Release** 模式构建。 | - |
+| `-c` | `--clean` | 在构建前先清理（删除）对应的构建目录。 | (不清理) |
+| - | `--clean-all` | 直接删除整个 `build/` 文件夹（清理所有架构和构建类型）。 | (不清理) |
+| `-h` | `--help` | 显示帮助信息。 | - |
+
+**常见示例：**
+
+1.  **默认构建 (ARM64 debug)**
+    ```bash
+    ./build.sh
+    ```
+    产物：`build/aarch64/debug/iotgw_gateway`
+
+2.  **构建 Release 版本**
+    ```bash
+    ./build.sh -r
+    # 或
+    ./build.sh --release
+    ```
+    产物：`build/aarch64/release/iotgw_gateway`
+
+3.  **构建 x86_64 版本** (如 macOS 本地测试)
+    ```bash
+    ./build.sh -a x86_64
+    ```
+
+4.  **清理并构建 Release 版本**
+    ```bash
+    ./build.sh -c -r
+    ```
+
+**说明：**
 - 第一次配置会通过 CMake FetchContent 拉取并构建第三方依赖（rapidyaml、mongoose）。
 - 如果你使用的是 aarch64 交叉编译工具链，生成的二进制需要拷贝到 RK3568（aarch64 Linux）上运行。
 
