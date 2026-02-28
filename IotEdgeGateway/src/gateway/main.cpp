@@ -1,6 +1,6 @@
 #include <string>
 
-#include "gateway/gateway_core.h"
+#include "gateway/gateway_core.hpp"
 
 namespace {
 

@@ -1,4 +1,4 @@
-#include "gateway/gateway_core.h"
+#include "gateway/gateway_core.hpp"
 
 #include <atomic>
 #include <csignal>
