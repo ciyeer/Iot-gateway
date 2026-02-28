@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.14 - 2026-02-28
+
+### Added
+- 新增 `build.sh` 构建脚本，支持 `--arch`, `--debug/release`, `--clean`, `--clean-all` 等参数。
+- 新增 `cmake-kits.json` 配置，支持 VS Code CMake Tools 自动识别 x86_64 与 aarch64 工具链。
+
+### Changed
+- 优化 `README.md` 系统架构图，使用对齐的 ASCII 字符绘制。
+- 调整 `build.sh` 参数风格为双横线长参数（如 `--debug`），并增加 `--clean-all` 选项以彻底清理构建目录。
+- 修复 `CMakeLists.txt` 中的依赖下载逻辑：优先使用本地 `find_package`，失败时回退到 Gitee 镜像拉取，解决国内网络下 GitHub 依赖下载失败问题。
+- 更新 `README.md` 构建说明，移除旧的手动 CMake 命令，改用 `build.sh` 脚本引导。
+
 ## 0.1.13 - 2026-01-28
 
 ### Added
