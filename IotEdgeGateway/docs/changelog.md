@@ -11,6 +11,10 @@
 - 调整 `build.sh` 参数风格为双横线长参数（如 `--debug`），并增加 `--clean-all` 选项以彻底清理构建目录。
 - 修复 `CMakeLists.txt` 中的依赖下载逻辑：优先使用本地 `find_package`，失败时回退到 Gitee 镜像拉取，解决国内网络下 GitHub 依赖下载失败问题。
 - 更新 `README.md` 构建说明，移除旧的手动 CMake 命令，改用 `build.sh` 脚本引导。
+- 重构 `docs` 目录结构：扁平化存放核心文档；更新 `api-reference.md` 以反映当前端口（8080）与接口实现。
+
+### Removed
+- 删除过时文档：`quick-start.md`（已合并至 README）、`hardware-setup.md`、`system-design.md` 以及对应的子目录结构。
 
 ## 0.1.13 - 2026-01-28
 
