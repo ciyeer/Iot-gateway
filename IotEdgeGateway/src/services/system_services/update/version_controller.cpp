@@ -67,11 +67,14 @@ static int CompareIdentifiers(const std::string& a, const std::string& b) {
       const auto vb = std::stoll(id_b);
       if (va < vb) return -1;
       if (va > vb) return 1;
-    } else if (a_num && !b_num) {
+    } 
+    else if (a_num && !b_num) {
       return -1;
-    } else if (!a_num && b_num) {
+    } 
+    else if (!a_num && b_num) {
       return 1;
-    } else {
+    } 
+    else {
       if (id_a < id_b) return -1;
       if (id_a > id_b) return 1;
     }
