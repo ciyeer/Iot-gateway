@@ -88,7 +88,8 @@ fi
 echo "Running CMake Configure..."
 cmake -S "$SOURCE_DIR" -B "$BUILD_DIR" -G Ninja \
     -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" \
-    -DCMAKE_OSX_ARCHITECTURES="$OSX_ARCH"
+    -DCMAKE_OSX_ARCHITECTURES="$OSX_ARCH" \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 
 if [ $? -ne 0 ]; then
     echo "CMake Configure failed!"

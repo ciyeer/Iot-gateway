@@ -9,8 +9,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "core/common/logger/logger.hpp"
-
 namespace iotgw {
 namespace services {
 namespace system_services {
