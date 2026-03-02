@@ -9,6 +9,7 @@
 #include "core/control/rule_engine.hpp"
 #include "core/device/manager/device_manager.hpp"
 #include "core/device/protocol_adapters/mqtt_adapter/mqtt_adapter.hpp"
+#include "services/system_services/camera/camera_manager.hpp"
 
 namespace iotgw {
 namespace services {
@@ -25,6 +26,7 @@ struct ApiContext {
     iotgw::core::device::manager::DeviceRegistry* device_registry = nullptr;
     iotgw::core::control::rule_engine::RuleEngine* rule_engine = nullptr;
     iotgw::core::device::protocol_adapters::mqtt::MqttClient* mqtt_client = nullptr;
+    iotgw::services::system_services::camera::CameraManager* camera_manager = nullptr;
 
     std::shared_ptr<iotgw::core::common::log::Logger> logger;
 };
@@ -39,6 +41,9 @@ bool HandleDeviceApi(struct mg_connection* c, struct mg_http_message* hm, const 
 
 bool HandleRuleApi(struct mg_connection* c, struct mg_http_message* hm, const std::string& rel_path,
                    const ApiContext& ctx);
+
+bool HandleCameraApi(struct mg_connection* c, struct mg_http_message* hm, const std::string& rel_path,
+                     const ApiContext& ctx);
 
 }  // namespace api
 }  // namespace web_services

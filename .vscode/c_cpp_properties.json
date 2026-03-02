@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/IotEdgeGateway/src/**",
+                "${workspaceFolder}/build/aarch64/debug/_deps/mongoose-src"
+            ],
+            "defines": [],
+            "macFrameworkPath": [],
+            "compilerPath": "/usr/bin/clang++",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "macos-clang-arm64",
+            "compileCommands": "${workspaceFolder}/build/aarch64/debug/compile_commands.json"
+        }
+    ],
+    "version": 4
+}

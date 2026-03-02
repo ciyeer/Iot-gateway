@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.15 - 2026-02-28
+
+### Added
+- 新增视频流服务模块：`CameraManager`，通过 `fork/exec` 管理 `mjpg-streamer` 进程。
+- 新增摄像头 REST API：
+  - `POST /api/camera/start`: 启动视频流。
+  - `POST /api/camera/stop`: 停止视频流。
+  - `GET /api/camera/snapshot`: 获取当前快照（需 mjpg-streamer 运行中）。
+- 集成 `CameraManager` 到 `GatewayCore`，实现网关启动时自动初始化（但不自动推流，需 API 触发）。
+
+### Changed
+- 优化 `CMakeLists.txt`：增加 `camera_manager.cpp` 和 `camera_api.cpp` 编译源文件。
+- 优化 `GatewayCore`：通过依赖注入方式管理 `CameraManager` 实例。
+
 ## 0.1.14 - 2026-02-28
 
 ### Added

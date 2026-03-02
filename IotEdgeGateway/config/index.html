@@ -391,20 +391,17 @@
 
     <script>
         // ========== 视频流核心配置 ==========
-        const STREAM_URL = '/stream/stream.m3u8';
-        const API_START_STREAM = '/api/camera/start_stream';
-        const API_STOP_STREAM = '/api/camera/stop_stream';
-        const API_START_RECORD = '/api/camera/start_record';
-        const API_STOP_RECORD = '/api/camera/stop_record';
+        // mjpg-streamer 默认端口 8081，路径 /?action=stream
+        const STREAM_PORT = 8081;
+        const API_START_STREAM = '/api/camera/start';
+        const API_STOP_STREAM = '/api/camera/stop';
         const API_SNAPSHOT = '/api/camera/snapshot';
 
         // 全局状态
         let streamStarted = false;
-        let recordStarted = false;
-        let hlsInstance = null;
 
         // DOM元素
-        const video = document.getElementById('videoPlayer');
+        const videoContainer = document.querySelector('.video-box');
         const streamStartBtn = document.getElementById('streamStartBtn');
         const streamStopBtn = document.getElementById('streamStopBtn');
         const snapshotBtn = document.getElementById('snapshotBtn');
@@ -441,33 +438,17 @@
             if (streamStarted) return;
             try {
                 addLog('正在启动视频流...');
-                await sendCommand(API_START_STREAM);
+                // 发送 POST 请求启动服务
+                await sendCommand(API_START_STREAM, { method: 'POST' });
 
-                if (Hls.isSupported()) {
-                    hlsInstance = new Hls();
-                    hlsInstance.loadSource(STREAM_URL);
-                    hlsInstance.attachMedia(video);
-                    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-                        video.play().catch(e => {
-                            addLog(`自动播放被阻止: ${e.message}`);
-                            console.warn("Autoplay blocked:", e);
-                        });
-                        addLog('✅ 视频流已连接');
-                    });
-                } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-                    video.src = STREAM_URL;
-                    video.addEventListener('loadedmetadata', () => {
-                        video.play().catch(e => {
-                            addLog(`自动播放被阻止: ${e.message}`);
-                            console.warn("Autoplay blocked:", e);
-                        });
-                        addLog('✅ 视频流已连接（Safari）');
-                    });
-                } else {
-                    addLog('❌ 浏览器不支持HLS视频流');
-                    alert('❌ 浏览器不支持 HLS 视频流！');
-                    return;
-                }
+                // 构造 MJPEG 流地址 (假设网关 IP 与当前页面相同)
+                const streamUrl = `http://${window.location.hostname}:${STREAM_PORT}/?action=stream`;
+                
+                // 使用 img 标签播放 MJPEG
+                videoContainer.innerHTML = `<img id="videoPlayer" src="${streamUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.src=''; addLog('无法连接视频流，请检查服务是否启动')">`;
+                
+                addLog('✅ 视频流服务已请求启动');
+                addLog(`尝试连接流地址: ${streamUrl}`);
 
                 streamStarted = true;
                 streamStartBtn.disabled = true;
@@ -481,12 +462,11 @@
             if (!streamStarted) return;
             try {
                 addLog('正在停止视频流...');
-                if (hlsInstance) {
-                    hlsInstance.destroy();
-                    hlsInstance = null;
-                }
-                video.src = '';
-                await sendCommand(API_STOP_STREAM);
+                
+                // 清理 img 标签
+                videoContainer.innerHTML = '<div style="color:white;display:flex;align-items:center;justify-content:center;height:100%;">视频已停止</div>';
+                
+                await sendCommand(API_STOP_STREAM, { method: 'POST' });
 
                 streamStarted = false;
                 streamStartBtn.disabled = false;
@@ -500,14 +480,21 @@
         async function takeSnapshot() {
             try {
                 addLog('正在拍照...');
-                await sendCommand(API_SNAPSHOT);
-                addLog('✅ 拍照成功！照片已保存至 snapshots/');
+                const res = await sendCommand(API_SNAPSHOT, { method: 'POST' });
+                if (res.ok) {
+                    addLog(`✅ 拍照成功！文件: ${res.filename}`);
+                } else {
+                    addLog('❌ 拍照失败');
+                }
             } catch (err) {
                 addLog(`❌ 拍照失败: ${err.message}`);
             }
         }
 
         async function toggleRecord() {
+            addLog('⚠️ 录像功能暂未实现');
+            alert('录像功能暂未实现');
+            /*
             if (!streamStarted) {
                 addLog('❌ 请先启动视频流再进行录像');
                 return;
@@ -536,6 +523,7 @@
                     addLog(`⚠️ 停止录像出错: ${err.message}`);
                 }
             }
+            */
         }
 
       function cmd() {

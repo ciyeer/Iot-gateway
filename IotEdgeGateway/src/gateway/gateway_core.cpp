@@ -21,6 +21,7 @@
 #include "core/control/rule_engine.hpp"
 #include "core/device/manager/device_manager.hpp"
 #include "core/device/protocol_adapters/mqtt_adapter/mqtt_adapter.hpp"
+#include "services/system_services/camera/camera_manager.hpp"
 #include "services/system_services/update/update_manager.hpp"
 #include "services/web_services/api/rest_api.hpp"
 #include "services/web_services/websocket/websocket_server.hpp"
@@ -351,6 +352,8 @@ int GatewayCore::Run(const Args& args) {
   const std::string rules_automation_file = config_root + "/rules/automation-rules.yaml";
   const std::string rules_alarm_file = config_root + "/rules/alarm-rules.yaml";
 
+  iotgw::services::system_services::camera::CameraManager camera_manager;
+
   iotgw::services::web_services::api::ApiContext api_ctx;
   api_ctx.base_path = cfg.GetStringOr("network.http_api.base_path", "/api");
   api_ctx.version = v;
@@ -360,6 +363,7 @@ int GatewayCore::Run(const Args& args) {
   api_ctx.device_registry = &device_registry;
   api_ctx.rule_engine = &rule_engine;
   api_ctx.mqtt_client = &mqtt_client;
+  api_ctx.camera_manager = &camera_manager;
   api_ctx.logger = logger;
 
   web_server.SetHttpHandler([&](struct mg_connection* c, struct mg_http_message* hm) -> bool {

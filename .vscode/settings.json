@@ -18,5 +18,21 @@
 			}
 		}
 	},
-	"cmake.configureOnOpen": true
+	"cmake.configureOnOpen": true,
+	"files.associations": {
+		"utility": "cpp",
+		"vector": "cpp"
+	},
+	"C_Cpp.default.compileCommands": "${command:cmake.buildDirectory}/compile_commands.json",
+	"C_Cpp.default.includePath": [
+		"${workspaceFolder}/IotEdgeGateway/src",
+		"${workspaceFolder}/build/aarch64/debug/_deps/mongoose-src"
+	],
+	"C_Cpp.default.compilerPath": "/usr/bin/clang++",
+	"C_Cpp.default.cppStandard": "c++14",
+	"C_Cpp.default.cStandard": "c11",
+	"clangd.arguments": [
+		"--compile-commands-dir=${workspaceFolder}/build/aarch64/debug",
+		"--query-driver=/usr/bin/clang++"
+	]
 }

@@ -64,6 +64,7 @@ bool HandleHttpRequest(struct mg_connection* c, struct mg_http_message* hm, cons
   if (HandleSystemApi(c, hm, rel_path, ctx)) return true;
   if (HandleDeviceApi(c, hm, rel_path, ctx)) return true;
   if (HandleRuleApi(c, hm, rel_path, ctx)) return true;
+  if (HandleCameraApi(c, hm, rel_path, ctx)) return true;
 
   return false;
 }
