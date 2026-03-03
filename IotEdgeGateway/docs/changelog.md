@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.1.16 - 2026-03-03
+
+### Added
+- **打包工具**：增强 `package_rk3568.sh` 脚本，支持 `-r` (Release) 和 `-d` (Debug) 模式参数。
+- **打包工具**：添加 `-c` / `--clean` 参数，支持一键清理打包工作区。
+- **项目结构**：引入独立的 `deploy/` 目录用于存放构建产物，保持项目根目录整洁。
+- **项目结构**：新增 `IotEdgeGateway/www` 目录用于存放静态 Web 资源，实现与配置文件的物理分离。
+- **部署配置**：打包过程中自动生成 `rk3568.yaml` 配置（根据构建类型自动设置日志级别）。
+- **协议文档**：创建 `config/devices/schema.yaml`，明确定义了单片机开发所需的标准通信协议（Telemetry/Command）。
+
+### Changed
+- **构建系统**：更新 `build.sh`，将 `-c` 参数重新映射为完全清理（移除了冗余的 `-cleanall`）。
+- **配置管理**：更新 `development.yaml`，将 `www_root` 指向新的 `www/` 目录。
+- **Git 配置**：在 `.gitignore` 中添加 `deploy/` 和 `logs/`，防止运行时文件和构建产物被意外提交。
+- **通信协议**：标准化 MQTT Topic 格式为 `iotgw/dev/cmd/<device_id>` 和 `iotgw/dev/telemetry/<device_id>`。
+- **日志管理**：将日志文件从项目根目录 `logs/` 迁移至 `data/logs/`，减少根目录杂乱。
+- **网络配置**：将开发环境默认 HTTP 端口从 `8080` 修改为 `8088`，避免与残留进程冲突。
+
+### Fixed
+- **Web UI**：修复“开关回弹”问题，在 `control_api.cpp` 中实现**乐观更新 (Optimistic UI Updates)** 机制。网关在收到控制指令后立即更新设备注册表状态。
+- **Web UI**：修复 `index.html` 开关状态同步逻辑。
+- **MQTT**：修复 `ControlAPI` 中 Topic 拼接错误（移除了双重前缀问题）。
+- **编译器**：修复 `control_api.cpp` 中未使用的变量警告（`sent`, `BoolStr`）。
+- **配置加载**：修复 `GatewayCore` 中 `www_root` 路径解析问题。
+
 ## 0.1.15 - 2026-02-28
 
 ### Added
