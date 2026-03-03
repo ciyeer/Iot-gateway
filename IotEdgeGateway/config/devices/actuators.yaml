@@ -1,7 +1,7 @@
 actuators:
-  - id: relay_1
-    type: relay
-    protocol: modbus
-    modbus:
-      unit_id: 1
-      coil: 1
+  - id: led
+    protocol: mqtt
+  - id: motor
+    protocol: mqtt
+  - id: buzzer
+    protocol: mqtt

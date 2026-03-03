@@ -45,6 +45,9 @@ bool HandleRuleApi(struct mg_connection* c, struct mg_http_message* hm, const st
 bool HandleCameraApi(struct mg_connection* c, struct mg_http_message* hm, const std::string& rel_path,
                      const ApiContext& ctx);
 
+bool HandleControlApi(struct mg_connection* c, struct mg_http_message* hm, const std::string& rel_path,
+                      const ApiContext& ctx);
+
 }  // namespace api
 }  // namespace web_services
 }  // namespace services

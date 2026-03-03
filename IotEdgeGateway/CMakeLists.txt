@@ -52,6 +52,7 @@ add_library(iotgw_common STATIC
     src/services/web_services/api/rule_api.cpp
     src/services/web_services/api/system_api.cpp
     src/services/web_services/api/camera_api.cpp
+    src/services/web_services/api/control_api.cpp
     src/services/system_services/update/version_controller.cpp
     src/services/system_services/camera/camera_manager.cpp
 )

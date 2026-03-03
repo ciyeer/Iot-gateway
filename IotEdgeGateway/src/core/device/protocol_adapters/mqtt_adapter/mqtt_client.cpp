@@ -100,9 +100,6 @@ void MqttClient::HandleEvent(struct mg_connection* c, int ev, void* ev_data) {
       conn_ = nullptr;
       if (logger_) logger_->Warn("MQTT disconnected");
     }
-  } else if (ev == MG_EV_ERROR) {
-    const char* err = static_cast<const char*>(ev_data);
-    if (logger_) logger_->Error(std::string("MQTT error: ") + (err ? err : "unknown"));
   }
 }
 

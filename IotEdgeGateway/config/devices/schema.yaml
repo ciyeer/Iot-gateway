@@ -1,0 +1,86 @@
+# 设备通信协议约定 (Schema Contract)
+# 该文件定义了网关(Gateway)与设备(Device)之间的通信数据格式
+# 单片机开发人员应严格遵守此约定
+
+version: "1.0"
+
+# 全局约定
+# 1. 话题前缀: iotgw/dev/
+# 2. 上行(Telemetry): iotgw/dev/telemetry/<device_id>
+# 3. 下行(Command): iotgw/dev/cmd/<device_id>
+
+devices:
+  # --- 传感器 (Sensors) ---
+  # 传感器只负责上报数据 (Telemetry)
+  
+  temp:
+    description: "温度传感器"
+    telemetry_topic: "iotgw/dev/telemetry/temp"
+    payload_schema:
+      type: object
+      properties:
+        value: { type: number, description: "温度值，单位摄氏度" }
+      example: { "value": 25.5 }
+
+  humi:
+    description: "湿度传感器"
+    telemetry_topic: "iotgw/dev/telemetry/humi"
+    payload_schema:
+      type: object
+      properties:
+        value: { type: number, description: "相对湿度，单位%" }
+      example: { "value": 60.0 }
+
+  light:
+    description: "光照传感器"
+    telemetry_topic: "iotgw/dev/telemetry/light"
+    payload_schema:
+      type: object
+      properties:
+        value: { type: number, description: "光照强度，单位Lux" }
+      example: { "value": 500 }
+
+  ir:
+    description: "红外传感器"
+    telemetry_topic: "iotgw/dev/telemetry/ir"
+    payload_schema:
+      type: object
+      properties:
+        value: { type: number, description: "红外检测值，通常>2000表示有人" }
+      example: { "value": 2500 }
+
+  # --- 执行器 (Actuators) ---
+  # 执行器既接收指令 (Command)，也上报状态 (Telemetry)
+  
+  led:
+    description: "LED灯"
+    command_topic: "iotgw/dev/cmd/led"
+    telemetry_topic: "iotgw/dev/telemetry/led"
+    payload_schema:
+      type: object
+      properties:
+        on: { type: integer, enum: [0, 1], description: "开关状态" }
+        br: { type: integer, min: 0, max: 100, description: "亮度百分比" }
+      example: { "on": 1, "br": 80 }
+
+  motor:
+    description: "电机"
+    command_topic: "iotgw/dev/cmd/motor"
+    telemetry_topic: "iotgw/dev/telemetry/motor"
+    payload_schema:
+      type: object
+      properties:
+        on: { type: integer, enum: [0, 1], description: "开关状态" }
+        sp: { type: integer, min: 0, max: 100, description: "速度百分比" }
+        dir: { type: integer, enum: [0, 1], description: "方向 (0:正转, 1:反转)" }
+      example: { "on": 1, "sp": 50, "dir": 0 }
+
+  buzzer:
+    description: "蜂鸣器"
+    command_topic: "iotgw/dev/cmd/buzzer"
+    telemetry_topic: "iotgw/dev/telemetry/buzzer"
+    payload_schema:
+      type: object
+      properties:
+        on: { type: integer, enum: [0, 1], description: "开关状态" }
+      example: { "on": 1 }

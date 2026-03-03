@@ -309,6 +309,15 @@ int GatewayCore::Run(const Args& args) {
       web_opt.ws_path = path2;
     }
   }
+
+  std::string www_root;
+  if (cfg.GetString("paths.www_root", www_root) && !www_root.empty()) {
+    web_opt.www_root = www_root;
+    logger->Info("Using www_root from config: " + www_root);
+  } else {
+    logger->Info("Using default www_root: " + web_opt.www_root);
+  }
+
   iotgw::services::web_services::websocket::MongooseServer web_server(web_opt, logger);
   if (!web_server.Start()) {
     logger->Error("Failed to start web server on " + web_opt.listen_addr);

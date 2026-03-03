@@ -5,6 +5,7 @@ paths:
   config_root: config
   data_dir: /var/lib/iotgw
   log_file: /var/log/iotgw/iotgw.log
+  www_root: /etc/iotgw/www  # Production web root
 
 logging:
   level: info

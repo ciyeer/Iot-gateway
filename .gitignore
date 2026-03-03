@@ -74,6 +74,7 @@ CTestTestfile.cmake
 *.log
 logs/
 data/
+deploy/
 TMP/
 tmp/
 

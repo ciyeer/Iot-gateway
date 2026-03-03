@@ -13,16 +13,14 @@ while [[ "$#" -gt 0 ]]; do
         -d|--debug) BUILD_TYPE="debug" ;;
         -r|--release) BUILD_TYPE="release" ;;
         -c|--clean) CLEAN=1 ;;
-        -cleanall) CLEAN_ALL=1 ;;
         -h|--help) 
             echo "Usage: ./build.sh --[options]"
             echo "Options:"
             echo "  -a|--arch <arch>        Architecture (aarch64 | x86_64). Default: aarch64"
             echo "  -d|--debug              Build with Debug configuration (Default)"
             echo "  -r|--release            Build with Release configuration"
-            echo "  -c|--clean              Clean build directory before building"
+            echo "  -c|--clean              Clean entire build directory and exit"
             echo "  -h|--help               Show this help message"
-            echo "  -cleanall               Clean entire build folder (removes build/)"
             exit 0
             ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
@@ -30,8 +28,8 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-# 如果指定了 --clean-all，则直接删除整个 build 目录并退出
-if [ "$CLEAN_ALL" -eq 1 ]; then
+# 如果指定了 --clean，则直接删除整个 build 目录并退出
+if [ "$CLEAN" -eq 1 ]; then
     echo "Cleaning entire build directory: build/"
     rm -rf build
     exit 0
@@ -72,12 +70,6 @@ echo "Build Type   : $BUILD_TYPE (CMake: $CMAKE_BUILD_TYPE)"
 echo "Source Dir   : $SOURCE_DIR"
 echo "Build Dir    : $BUILD_DIR"
 echo "=============================================================================="
-
-# 如果指定了清理，则删除构建目录
-if [ "$CLEAN" -eq 1 ]; then
-    echo "Cleaning build directory: $BUILD_DIR"
-    rm -rf "$BUILD_DIR"
-fi
 
 # 配置 CMake
 # -S: 源文件目录
