@@ -1,11 +1,7 @@
 #include "services/web_services/api/rest_api.hpp"
 #include "core/device/manager/device_manager.hpp"
 
-#include <iostream>
-#include <cmath>
 #include <string>
-
-#include "core/common/utils/json_utils.hpp"
 
 namespace iotgw {
 namespace services {
@@ -16,6 +12,14 @@ namespace {
 
 static bool IsMethod(const struct mg_http_message* hm, const char* method) {
   return mg_strcmp(hm->method, mg_str(method)) == 0;
+}
+
+#include <ctime>
+
+// Helper to construct envelope payload
+static std::string MakeEnvelope(const std::string& id, const std::string& type, const std::string& data_json) {
+    std::time_t now = std::time(nullptr);
+    return "{\"device_id\":\"" + id + "\",\"type\":\"" + type + "\",\"data\":" + data_json + ",\"ts\":" + std::to_string(now) + "}";
 }
 
 }  // namespace
@@ -46,26 +50,42 @@ bool HandleControlApi(struct mg_connection* c, struct mg_http_message* hm, const
         
         struct mg_str json = mg_str(d.status.last_payload.c_str());
         
+        // Unified Device Model Parsing: Look into $.data.*
+        // Also support fallback to flat JSON for backward compatibility if needed, 
+        // but here we strictly follow the new schema for standard compliance.
+        
         if (d.id == "temp" || d.id == "humi" || d.id == "light" || d.id == "ir") {
             double val = 0;
-            if (mg_json_get_num(json, "$.value", &val)) {
+            // Try envelope format first: $.data.value
+            if (mg_json_get_num(json, "$.data.value", &val)) {
+                add_field(d.id, std::to_string(val));
+            } else if (mg_json_get_num(json, "$.value", &val)) { // Fallback
                 add_field(d.id, std::to_string(val));
             }
         } else if (d.id == "led") {
              double on = 0;
-             if (mg_json_get_num(json, "$.on", &on)) add_field("led_on", std::to_string((int)on));
+             bool has_on = mg_json_get_num(json, "$.data.on", &on) || mg_json_get_num(json, "$.on", &on);
+             if (has_on) add_field("led_on", std::to_string((int)on));
+             
              double br = 0;
-             if (mg_json_get_num(json, "$.br", &br)) add_field("led_br", std::to_string((int)br));
+             bool has_br = mg_json_get_num(json, "$.data.br", &br) || mg_json_get_num(json, "$.br", &br);
+             if (has_br) add_field("led_br", std::to_string((int)br));
         } else if (d.id == "motor") {
              double on = 0;
-             if (mg_json_get_num(json, "$.on", &on)) add_field("motor_on", std::to_string((int)on));
+             if (mg_json_get_num(json, "$.data.on", &on) || mg_json_get_num(json, "$.on", &on)) 
+                add_field("motor_on", std::to_string((int)on));
+             
              double sp = 0;
-             if (mg_json_get_num(json, "$.sp", &sp)) add_field("motor_sp", std::to_string((int)sp));
+             if (mg_json_get_num(json, "$.data.sp", &sp) || mg_json_get_num(json, "$.sp", &sp)) 
+                add_field("motor_sp", std::to_string((int)sp));
+             
              double dir = 0;
-             if (mg_json_get_num(json, "$.dir", &dir)) add_field("motor_dir", std::to_string((int)dir));
+             if (mg_json_get_num(json, "$.data.dir", &dir) || mg_json_get_num(json, "$.dir", &dir)) 
+                add_field("motor_dir", std::to_string((int)dir));
         } else if (d.id == "buzzer") {
              double on = 0;
-             if (mg_json_get_num(json, "$.on", &on)) add_field("buzzer", std::to_string((int)on));
+             if (mg_json_get_num(json, "$.data.on", &on) || mg_json_get_num(json, "$.on", &on)) 
+                add_field("buzzer", std::to_string((int)on));
         }
     }
     json_body += "}";
@@ -85,11 +105,13 @@ bool HandleControlApi(struct mg_connection* c, struct mg_http_message* hm, const
           mg_json_get_num(json, "$.payload.led_br", &led_br);
           
           if (led_on != -1 || led_br != -1) {
-              std::string payload = "{";
-              if (led_on != -1) payload += "\"on\": " + std::to_string((int)led_on);
-              if (led_on != -1 && led_br != -1) payload += ", ";
-              if (led_br != -1) payload += "\"br\": " + std::to_string((int)led_br);
-              payload += "}";
+              std::string data = "{";
+              if (led_on != -1) data += "\"on\": " + std::to_string((int)led_on);
+              if (led_on != -1 && led_br != -1) data += ", ";
+              if (led_br != -1) data += "\"br\": " + std::to_string((int)led_br);
+              data += "}";
+              
+              std::string payload = MakeEnvelope("led", "actuator", data);
               
               std::string topic = ctx.mqtt_topic_prefix + "cmd/led";
               if (ctx.mqtt_client->Publish(topic, payload, 0, false)) {
@@ -110,12 +132,14 @@ bool HandleControlApi(struct mg_connection* c, struct mg_http_message* hm, const
           mg_json_get_num(json, "$.payload.motor_dir", &motor_dir);
 
           if (motor_on != -1 || motor_sp != -1 || motor_dir != -1) {
-              std::string payload = "{";
+              std::string data = "{";
               bool first = true;
-              if (motor_on != -1) { payload += "\"on\": " + std::to_string((int)motor_on); first = false; }
-              if (motor_sp != -1) { if(!first) payload+=", "; payload += "\"sp\": " + std::to_string((int)motor_sp); first=false; }
-              if (motor_dir != -1) { if(!first) payload+=", "; payload += "\"dir\": " + std::to_string((int)motor_dir); }
-              payload += "}";
+              if (motor_on != -1) { data += "\"on\": " + std::to_string((int)motor_on); first = false; }
+              if (motor_sp != -1) { if(!first) data+=", "; data += "\"sp\": " + std::to_string((int)motor_sp); first=false; }
+              if (motor_dir != -1) { if(!first) data+=", "; data += "\"dir\": " + std::to_string((int)motor_dir); }
+              data += "}";
+              
+              std::string payload = MakeEnvelope("motor", "actuator", data);
               
               std::string topic = ctx.mqtt_topic_prefix + "cmd/motor";
               if (ctx.mqtt_client->Publish(topic, payload, 0, false)) {
@@ -133,7 +157,8 @@ bool HandleControlApi(struct mg_connection* c, struct mg_http_message* hm, const
           double buzzer = -1;
           mg_json_get_num(json, "$.payload.buzzer", &buzzer);
           if (buzzer != -1) {
-              std::string payload = "{\"on\": " + std::to_string((int)buzzer) + "}";
+              std::string data = "{\"on\": " + std::to_string((int)buzzer) + "}";
+              std::string payload = MakeEnvelope("buzzer", "actuator", data);
               
               std::string topic = ctx.mqtt_topic_prefix + "cmd/buzzer";
               if (ctx.mqtt_client->Publish(topic, payload, 0, false)) {

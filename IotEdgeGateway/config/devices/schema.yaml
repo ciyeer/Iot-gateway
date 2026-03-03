@@ -1,17 +1,23 @@
 # 设备通信协议约定 (Schema Contract)
 # 该文件定义了网关(Gateway)与设备(Device)之间的通信数据格式
-# 单片机开发人员应严格遵守此约定
+# 基于 "Unified Device Model" (统一设备模型)
 
-version: "1.0"
+version: "1.1"
 
 # 全局约定
 # 1. 话题前缀: iotgw/dev/
 # 2. 上行(Telemetry): iotgw/dev/telemetry/<device_id>
 # 3. 下行(Command): iotgw/dev/cmd/<device_id>
+# 4. 数据格式 (Envelope):
+#    {
+#      "device_id": "...",
+#      "type": "sensor" | "actuator",
+#      "data": { ... },
+#      "ts": <timestamp>
+#    }
 
 devices:
   # --- 传感器 (Sensors) ---
-  # 传感器只负责上报数据 (Telemetry)
   
   temp:
     description: "温度传感器"
@@ -19,8 +25,18 @@ devices:
     payload_schema:
       type: object
       properties:
-        value: { type: number, description: "温度值，单位摄氏度" }
-      example: { "value": 25.5 }
+        device_id: { type: string, const: "temp" }
+        type: { type: string, const: "sensor" }
+        data:
+          type: object
+          properties:
+            value: { type: number, description: "温度值" }
+        ts: { type: integer }
+      example: 
+        device_id: "temp"
+        type: "sensor"
+        data: { "value": 25.5 }
+        ts: 1700000000
 
   humi:
     description: "湿度传感器"
@@ -28,8 +44,17 @@ devices:
     payload_schema:
       type: object
       properties:
-        value: { type: number, description: "相对湿度，单位%" }
-      example: { "value": 60.0 }
+        device_id: { type: string, const: "humi" }
+        type: { type: string, const: "sensor" }
+        data:
+          type: object
+          properties:
+            value: { type: number, description: "湿度值" }
+      example:
+        device_id: "humi"
+        type: "sensor"
+        data: { "value": 60.0 }
+        ts: 1700000000
 
   light:
     description: "光照传感器"
@@ -37,8 +62,8 @@ devices:
     payload_schema:
       type: object
       properties:
-        value: { type: number, description: "光照强度，单位Lux" }
-      example: { "value": 500 }
+        data: { properties: { value: { type: number } } }
+      example: { "device_id": "light", "type": "sensor", "data": { "value": 500 }, "ts": 1700000000 }
 
   ir:
     description: "红外传感器"
@@ -46,11 +71,10 @@ devices:
     payload_schema:
       type: object
       properties:
-        value: { type: number, description: "红外检测值，通常>2000表示有人" }
-      example: { "value": 2500 }
+        data: { properties: { value: { type: number } } }
+      example: { "device_id": "ir", "type": "sensor", "data": { "value": 2500 }, "ts": 1700000000 }
 
   # --- 执行器 (Actuators) ---
-  # 执行器既接收指令 (Command)，也上报状态 (Telemetry)
   
   led:
     description: "LED灯"
@@ -59,9 +83,14 @@ devices:
     payload_schema:
       type: object
       properties:
-        on: { type: integer, enum: [0, 1], description: "开关状态" }
-        br: { type: integer, min: 0, max: 100, description: "亮度百分比" }
-      example: { "on": 1, "br": 80 }
+        device_id: { type: string, const: "led" }
+        type: { type: string, const: "actuator" }
+        data:
+          type: object
+          properties:
+            on: { type: integer, enum: [0, 1] }
+            br: { type: integer, min: 0, max: 100 }
+      example: { "device_id": "led", "type": "actuator", "data": { "on": 1, "br": 80 }, "ts": 1700000000 }
 
   motor:
     description: "电机"
@@ -70,10 +99,13 @@ devices:
     payload_schema:
       type: object
       properties:
-        on: { type: integer, enum: [0, 1], description: "开关状态" }
-        sp: { type: integer, min: 0, max: 100, description: "速度百分比" }
-        dir: { type: integer, enum: [0, 1], description: "方向 (0:正转, 1:反转)" }
-      example: { "on": 1, "sp": 50, "dir": 0 }
+        data:
+          type: object
+          properties:
+            on: { type: integer }
+            sp: { type: integer }
+            dir: { type: integer }
+      example: { "device_id": "motor", "type": "actuator", "data": { "on": 1, "sp": 50, "dir": 0 }, "ts": 1700000000 }
 
   buzzer:
     description: "蜂鸣器"
@@ -82,5 +114,5 @@ devices:
     payload_schema:
       type: object
       properties:
-        on: { type: integer, enum: [0, 1], description: "开关状态" }
-      example: { "on": 1 }
+        data: { properties: { on: { type: integer } } }
+      example: { "device_id": "buzzer", "type": "actuator", "data": { "on": 1 }, "ts": 1700000000 }
