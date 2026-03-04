@@ -72,6 +72,7 @@
 | 分类     | 使用技术                        |
 | ------ | --------------------------- |
 | 平台     | RK3568 / Embedded Linux     |
+| 编译环境 | macOS + Docker (Cross Compile) |
 | 通信协议   | Zigbee / MQTT / UART        |
 | Web 服务 | Mongoose / WebSocket / REST |
 | 视频流媒体  | mjpg-streamer / GStreamer   |
@@ -84,26 +85,16 @@
 ## 📂 项目结构 · Directory Layout
 
 ```
-IotEdgeGateway/
-├── IotEdgeGateway/
+Iot-gateway/
+├── IotEdgeGateway/       # 核心源码与配置
 │   ├── CMakeLists.txt
-│   ├── src/
-│   │   ├── core/
-│   │   ├── services/
-│   │   └── gateway/
-│   ├── config/
-│   │   ├── environments/
-│   │   ├── network/
-│   │   ├── devices/
-│   │   └── rules/
-│   ├── docs/
-│   │   ├── architecture/
-│   │   ├── deployment/
-│   │   └── development/
-│   ├── build-deploy/
-│   │   ├── docker/
-│   │   └── deploy/
-│   └── docs/changelog.md
+│   ├── src/              # C++ 源代码
+│   ├── config/           # 配置文件 (yaml)
+│   ├── docs/             # 项目文档
+│   └── www/              # 静态 Web 资源
+├── tools/                # 开发工具与环境
+│   └── docker/           # 交叉编译 Docker 环境
+├── build.sh              # 统一构建脚本
 ├── LICENSE
 └── README.md
 ```
@@ -115,6 +106,9 @@ IotEdgeGateway/
 ### 1️⃣ 构建
 
 本项目提供了一个便捷的 `build.sh` 脚本，用于统一管理不同架构和配置的构建过程。
+
+> **注意**：如果您在 macOS 上构建 ARM64 版本（用于 RK3568），需要安装 **Docker Desktop** 以使用交叉编译环境。
+> 请使用专用脚本：`./tools/docker/run_docker_build.sh`
 
 **基本用法：**
 

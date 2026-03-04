@@ -1,0 +1,12 @@
+#pragma once
+
+namespace iotgw {
+namespace version {
+
+constexpr const char* GIT_COMMIT_HASH = "@GIT_COMMIT_HASH@";
+constexpr const char* BUILD_TIMESTAMP = "@BUILD_TIMESTAMP@";
+constexpr const char* PROJECT_VERSION = "@PROJECT_VERSION@";
+constexpr const char* BUILD_TYPE      = "@CMAKE_BUILD_TYPE@";
+
+} // namespace version
+} // namespace iotgw

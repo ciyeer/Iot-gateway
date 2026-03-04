@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.2.0 - 2026-03-04
+
+### Added
+- **CI/CD 流水线**：正式引入自动化构建与发布流程。
+  - 集成 GitHub Actions (`.github/workflows/build.yml`)，实现提交即构建。
+  - 引入 Docker 交叉编译环境 (`tools/docker/`)，确保构建环境一致性。
+- **构建优化**：
+  - **自动 Strip**：集成到 CMake POST_BUILD 阶段，自动去除符号表，Release 包体积大幅减小。
+  - **版本注入**：使用 `cmake/version.hpp.in` 模板，自动将 Git Commit Hash、构建时间、版本号注入到程序中，并在启动时打印。
+- **部署工具**：
+  - 新增 `run_docker_build.sh`：一键在 Docker 中完成编译、Strip 和打包，生成 `iotgw-<commit>-v0.2.0.tar.gz`。
+  - 新增 `deploy_to_board.sh`：一键将发布包部署到 RK3568 开发板（自动上传、解压、重启服务）。
+
+### Changed
+- **版本升级**：项目版本号升级至 **0.2.0**，标志着工程化基础设施搭建完成。
+- **设备通信协议**：全面升级为“统一设备模型”（Unified Device Model）。
+  - **Payload 格式**：采用 Envelope（信封）结构，统一使用 `{ "id": "...", "type": "...", "data": { "value": ... }, "ts": ... }` 格式。
+  - **控制接口**：更新 `control_api.cpp` 适配新的 JSON 结构。
+
+## 0.1.18 - 2026-03-04
+
+### Added
+- **交叉编译环境**：引入 Docker 容器化构建方案 (`tools/docker/`)，解决 macOS 下无法直接编译 Linux ELF 二进制文件（Exec format error）的问题。
+  - `Dockerfile.build`: 构建包含 `aarch64-linux-gnu-g++` 和 `cmake` 的编译镜像（已优化为阿里云源）。
+  - `toolchain-aarch64.cmake`: 定义 CMake 交叉编译工具链配置。
+  - `run_docker_build.sh`: 增加自动打包逻辑，生成 `iotgw-<commit>-v<version>.tar.gz`。
+  - `tools/deploy_to_board.sh`: 新增一键发布脚本（SCP + SSH 远程重启）。
+  - `.github/workflows/build.yml`: 新增 GitHub Actions 自动交叉编译配置。
+- **构建优化**：
+  - **自动 Strip**：集成到 CMake POST_BUILD 阶段，自动去除符号表，大幅减小 Release 二进制体积。
+  - **版本注入**：使用 `cmake/version.hpp.in` 模板，自动将 Git Commit Hash、构建时间、版本号注入到程序中，并在启动时打印。
+
+### Changed
+- **设备通信协议**：全面升级为“统一设备模型”（Unified Device Model）。
+  - **Payload 格式**：采用 Envelope（信封）结构，统一使用 `{ "id": "...", "type": "...", "data": { "value": ... }, "ts": ... }` 格式。
+  - **控制接口**：更新 `control_api.cpp` 适配新的 JSON 结构，支持从 `data` 字段中提取控制指令。
+  - **协议文档**：同步更新 `config/devices/schema.yaml` 中的数据契约定义。
+
 ## 0.1.17 - 2026-03-03
 
 ### Changed

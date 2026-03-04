@@ -1,4 +1,5 @@
 #include "gateway/gateway_core.hpp"
+#include "version.hpp"
 
 #include <atomic>
 #include <csignal>
@@ -277,6 +278,11 @@ int GatewayCore::Run(const Args& args) {
 
   logger->Info("iotgw starting");
   logger->Info(std::string("log_file=") + a.log_file);
+
+  logger->Info(std::string("Build Version: ") + iotgw::version::PROJECT_VERSION);
+  logger->Info(std::string("Git Commit:    ") + iotgw::version::GIT_COMMIT_HASH);
+  logger->Info(std::string("Build Time:    ") + iotgw::version::BUILD_TIMESTAMP);
+  logger->Info(std::string("Build Type:    ") + iotgw::version::BUILD_TYPE);
 
   const std::string v = update_mgr.GetCurrentVersionOr("unknown");
   logger->Info(std::string("current_version=") + v);

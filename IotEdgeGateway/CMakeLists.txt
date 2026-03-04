@@ -1,10 +1,35 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(IotEdgeGateway VERSION 0.1.0 LANGUAGES CXX C)
+project(IotEdgeGateway VERSION 0.2.0 LANGUAGES CXX C)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# 获取 Git Commit Hash
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_COMMIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+else()
+    set(GIT_COMMIT_HASH "unknown")
+endif()
+
+# 获取构建时间
+string(TIMESTAMP BUILD_TIMESTAMP "%Y-%m-%d %H:%M:%S")
+
+# 生成版本头文件
+configure_file(
+    ${CMAKE_SOURCE_DIR}/cmake/version.hpp.in
+    ${CMAKE_BINARY_DIR}/generated/version.hpp
+)
+
+# 包含生成目录
+include_directories(${CMAKE_BINARY_DIR}/generated)
 
 if (NOT DEFINED FETCHCONTENT_BASE_DIR)
   set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/_deps" CACHE PATH "")
@@ -61,6 +86,14 @@ add_executable(iotgw_gateway
     src/gateway/main.cpp
     src/gateway/gateway_core.cpp
 )
+
+# 自动 Strip 减小体积 (Release 模式)
+if(CMAKE_BUILD_TYPE STREQUAL "Release" AND CMAKE_STRIP)
+    add_custom_command(TARGET iotgw_gateway POST_BUILD
+        COMMAND ${CMAKE_STRIP} $<TARGET_FILE:iotgw_gateway>
+        COMMENT "Stripping binary to reduce size"
+    )
+endif()
 
 target_link_libraries(iotgw_gateway
   PRIVATE

@@ -163,93 +163,46 @@ echo "Executable: $BUILD_DIR/iotgw_gateway"
 echo "=============================================================================="
 
 # ------------------------------------------------------------------------------
-# 自动执行打包流程 (集成 package_rk3568.sh 逻辑)
+# 自动执行打包流程
 # ------------------------------------------------------------------------------
 
 if [ "$DO_PACKAGE" -eq 1 ]; then
+    echo "Warning: Native packaging via build.sh is deprecated for cross-compilation."
+    echo "Please use tools/docker/run_docker_build.sh for full release packaging."
+    echo ""
+    echo "Running simple local packaging for testing..."
 
-# 设置部署相关目录
-DEPLOY_ROOT="${BUILD_DIR}/deploy"
-PACKAGE_DIR="${DEPLOY_ROOT}/iotgw_package"
-CONFIG_SRC="${SOURCE_DIR}/config"
-WWW_SRC="${SOURCE_DIR}/www"
+    # 设置部署相关目录
+    DEPLOY_ROOT="${BUILD_DIR}/deploy"
+    PACKAGE_DIR="${DEPLOY_ROOT}/iotgw_package"
+    CONFIG_SRC="${SOURCE_DIR}/config"
+    WWW_SRC="${SOURCE_DIR}/www"
 
-# 准备打包目录
-echo "Packaging..."
-rm -rf "${PACKAGE_DIR}"
-mkdir -p "${PACKAGE_DIR}/bin"
-mkdir -p "${PACKAGE_DIR}/config"
+    # 准备打包目录
+    rm -rf "${PACKAGE_DIR}"
+    mkdir -p "${PACKAGE_DIR}/bin"
+    mkdir -p "${PACKAGE_DIR}/config"
 
-# 1. 拷贝可执行文件
-cp "${BUILD_DIR}/iotgw_gateway" "${PACKAGE_DIR}/bin/"
+    # 1. 拷贝可执行文件
+    cp "${BUILD_DIR}/iotgw_gateway" "${PACKAGE_DIR}/bin/"
 
-# 2. 拷贝配置文件 (排除 Web 资源)
-cp -r "${CONFIG_SRC}/" "${PACKAGE_DIR}/config/"
-rm -f "${PACKAGE_DIR}/config/index.html"
-rm -rf "${PACKAGE_DIR}/config/css" "${PACKAGE_DIR}/config/js" "${PACKAGE_DIR}/config/images"
+    # 2. 拷贝配置文件 (保留原样)
+    cp -r "${CONFIG_SRC}/" "${PACKAGE_DIR}/config/"
 
-# 3. 生成 rk3568.yaml 配置
-LOG_LEVEL="info"
-if [ "$BUILD_TYPE_LOWER" == "debug" ]; then
-    LOG_LEVEL="debug"
-fi
-
-cat > "${PACKAGE_DIR}/config/environments/rk3568.yaml" <<EOF
-name: IotEdgeGateway
-env: production
-
-paths:
-  config_root: config
-  data_dir: data
-  log_file: /var/log/iotgw/iotgw.log
-  www_root: www
-
-logging:
-  level: ${LOG_LEVEL}
-  file_sink_enabled: true
-
-network:
-  http_api:
-    host: 0.0.0.0
-    port: 8088
-    base_path: /api
-  websocket:
-    path: /ws
-
-mqtt:
-  enabled: true
-  broker_host: 118.196.46.169
-  broker_port: 1883
-  client_id: iotgw-rk3568
-  username: "zg"
-  password: "12345678"
-  keepalive_sec: 30
-  clean_session: true
-  topic_prefix: "iotgw/dev/"
-EOF
-
-# 4. 拷贝 Web 静态资源
-if [ -d "${WWW_SRC}" ]; then
-    mkdir -p "${PACKAGE_DIR}/www"
-    cp -r "${WWW_SRC}/" "${PACKAGE_DIR}/www/"
-fi
-
-# 5. 生成启动脚本
-cat > "${PACKAGE_DIR}/start.sh" <<EOF
+    # 3. 拷贝 Web 静态资源
+    if [ -d "${WWW_SRC}" ]; then
+        mkdir -p "${PACKAGE_DIR}/www"
+        cp -r "${WWW_SRC}/" "${PACKAGE_DIR}/www/"
+    fi
+    
+    # 4. 生成简单启动脚本
+    cat > "${PACKAGE_DIR}/start.sh" <<EOF
 #!/bin/bash
 cd "\$(dirname "\$0")"
 export LD_LIBRARY_PATH=./lib:\$LD_LIBRARY_PATH
-chmod +x bin/iotgw_gateway
-./bin/iotgw_gateway --yaml-config config/environments/rk3568.yaml
+./bin/iotgw_gateway --yaml-config config/environments/development.yaml
 EOF
-chmod +x "${PACKAGE_DIR}/start.sh"
+    chmod +x "${PACKAGE_DIR}/start.sh"
 
-# 6. 压缩打包
-mkdir -p "${DEPLOY_ROOT}"
-PACKAGE_NAME="iotgw_${ARCH}_${BUILD_TYPE_LOWER}.tar.gz"
-tar -czf "${DEPLOY_ROOT}/${PACKAGE_NAME}" -C "${DEPLOY_ROOT}" iotgw_package
-
-echo "Package Created: ${DEPLOY_ROOT}/${PACKAGE_NAME}"
-echo "=============================================================================="
-
-fi # End of DO_PACKAGE
+    echo "Local test package created at: ${PACKAGE_DIR}"
+fi
