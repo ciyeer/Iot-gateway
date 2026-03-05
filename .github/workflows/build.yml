@@ -32,16 +32,21 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
         
+    - name: Lowercase Repository Name
+      id: repo_name
+      run: |
+        echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
     - name: Build & Push Builder Image
       uses: docker/build-push-action@v5
       with:
         context: tools/docker
         file: tools/docker/Dockerfile
         push: true
-        tags: ghcr.io/${{ github.repository }}/builder:latest
+        tags: ghcr.io/${{ env.REPO }}/builder:latest
         build-args: |
           USE_CHINA_MIRROR=false
-        cache-from: type=registry,ref=ghcr.io/${{ github.repository }}/builder:latest
+        cache-from: type=registry,ref=ghcr.io/${{ env.REPO }}/builder:latest
         cache-to: type=inline
       
     - name: Build Project
@@ -49,8 +54,8 @@ jobs:
       # 注意：run_docker_build.sh 默认使用 local 的 iotgw-builder
       # 我们可以在脚本执行前把 GHCR 的镜像 retag 为本地镜像
       run: |
-        docker pull ghcr.io/${{ github.repository }}/builder:latest
-        docker tag ghcr.io/${{ github.repository }}/builder:latest iotgw-builder
+        docker pull ghcr.io/${{ env.REPO }}/builder:latest
+        docker tag ghcr.io/${{ env.REPO }}/builder:latest iotgw-builder
         ./tools/docker/run_docker_build.sh
 
       
