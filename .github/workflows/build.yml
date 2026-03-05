@@ -18,7 +18,7 @@ jobs:
       uses: docker/setup-buildx-action@v3
       
     - name: Build Builder Image
-      run: docker build -t iotgw-builder -f tools/docker/Dockerfile.build tools/docker
+      run: docker build -t iotgw-builder -f tools/docker/Dockerfile tools/docker
       
     - name: Build Project
       run: |
