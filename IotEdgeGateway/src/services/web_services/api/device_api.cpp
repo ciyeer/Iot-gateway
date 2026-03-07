@@ -1,7 +1,6 @@
 #include "services/web_services/api/rest_api.hpp"
 
-#include <cmath>
-#include <cstdlib>
+#include <ctime>
 #include <string>
 
 #include "core/common/utils/json_utils.hpp"
@@ -12,6 +11,12 @@ namespace web_services {
 namespace api {
 
 namespace {
+
+static std::string MakeEnvelope(const std::string& id, const std::string& type, const std::string& data_json) {
+  std::time_t now = std::time(nullptr);
+  return "{\"device_id\":\"" + id + "\",\"type\":\"" + type + "\",\"data\":" + data_json +
+         ",\"ts\":" + std::to_string(now) + "}";
+}
 
 static std::string ToStdString(const struct mg_str& s) {
   return std::string(s.buf, s.len);
@@ -27,16 +32,6 @@ static bool StartsWith(const std::string& s, const std::string& prefix) {
 
 static bool EndsWith(const std::string& s, const std::string& suffix) {
   return s.size() >= suffix.size() && s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
-}
-
-static std::string FormatNumber(double v) {
-  const double iv = std::llround(v);
-  if (std::fabs(v - iv) < 1e-9) return std::to_string(static_cast<long long>(iv));
-  std::string s = std::to_string(v);
-  while (!s.empty() && s.back() == '0') s.pop_back();
-  if (!s.empty() && s.back() == '.') s.pop_back();
-  if (s.empty()) return "0";
-  return s;
 }
 
 static std::string DefaultCmdTopic(const std::string& mqtt_topic_prefix, const std::string& device_id) {
@@ -81,20 +76,8 @@ bool HandleDeviceApi(struct mg_connection* c, struct mg_http_message* hm, const 
     }
 
     const std::string body_in = ToStdString(hm->body);
-
-    double num = 0.0;
-    const bool has_num = mg_json_get_num(mg_str(body_in.c_str()), "$.value", &num);
-    std::string value_out;
-    if (has_num) {
-      value_out = FormatNumber(num);
-    } else {
-      char* s = mg_json_get_str(mg_str(body_in.c_str()), "$.value");
-      if (s != nullptr) value_out = s;
-      if (s != nullptr) mg_free(s);
-    }
-
-    if (value_out.empty()) {
-      mg_http_reply(c, 400, "Content-Type: application/json\r\n", "{\"error\":\"missing_value\"}\n");
+    if (body_in.empty()) {
+      mg_http_reply(c, 400, "Content-Type: application/json\r\n", "{\"error\":\"empty_body\"}\n");
       return true;
     }
 
@@ -105,7 +88,10 @@ bool HandleDeviceApi(struct mg_connection* c, struct mg_http_message* hm, const 
 
     bool ok = false;
     if (ctx.mqtt_client != nullptr && ctx.mqtt_client->IsOpen()) {
-      ok = ctx.mqtt_client->Publish(cmd_topic, value_out, 0, false);
+      // Wrap the payload in a standard envelope
+      // Assumes body_in is a valid JSON object or value
+      std::string payload = MakeEnvelope(id, "cmd", body_in);
+      ok = ctx.mqtt_client->Publish(cmd_topic, payload, 0, false);
     }
 
     const std::string resp =
