@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.2 - 2026-03-11
+
+### Added
+- **Camera**: 新增摄像头管理模块 (CameraManager)，支持实时推流 (MJPEG)、抓拍 (Snapshot) 和录像 (Recording)。
+- **Web UI**: 增加摄像头控制面板，支持推流、抓拍、录像操作及状态显示。
+- **CI/CD**:
+  - 集成 `.clang-format` 和 `.clang-tidy` 代码风格检查。
+  - 集成 Release Drafter 自动生成发布草稿。
+- **Tools**: 新增 `format_code.sh` 和 `check_format.sh` 脚本用于代码格式化。
+
+### Changed
+- **Architecture**: 将摄像头功能从 GStreamer 迁移到 FFmpeg (h264_rkmpp) 以优化录像性能和文件兼容性。
+- **Refactor**: 全面应用 Google C++ 代码风格规范。
+
 ## 0.2.1 - 2026-03-05
 
 ### Fixed
