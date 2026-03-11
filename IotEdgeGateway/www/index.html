@@ -396,6 +396,7 @@
 
         // 全局状态
         let streamStarted = false;
+        let recordStarted = false;
 
         // DOM元素
         const videoContainer = document.querySelector('.video-box');
@@ -489,22 +490,17 @@
         }
 
         async function toggleRecord() {
-            addLog('⚠️ 录像功能暂未实现');
-            alert('录像功能暂未实现');
-            /*
-            if (!streamStarted) {
-                addLog('❌ 请先启动视频流再进行录像');
-                return;
-            }
-
             if (!recordStarted) {
                 // 开始录像
                 try {
                     addLog('正在启动录像...');
-                    await sendCommand(API_START_RECORD);
-                    recordStarted = true;
-                    recordBtn.innerHTML = '⏹ 停止录制';
-                    addLog('✅ 录像已开始');
+                    const res = await sendCommand('/api/camera/record/start', { method: 'POST' });
+                    if (res.ok) {
+                        recordStarted = true;
+                        recordBtn.innerHTML = '⏹ 停止录制';
+                        recordBtn.style.background = '#000'; // 录制中变黑
+                        addLog(`✅ 录像已开始，保存至: ${res.filename}`);
+                    }
                 } catch (err) {
                     addLog(`❌ 录像启动失败: ${err.message}`);
                 }
@@ -512,15 +508,15 @@
                 // 停止录像
                 try {
                     addLog('正在停止录像...');
-                    await sendCommand(API_STOP_RECORD);
+                    await sendCommand('/api/camera/record/stop', { method: 'POST' });
                     recordStarted = false;
                     recordBtn.innerHTML = '🔴 视频录制';
-                    addLog('✅ 录像已保存');
+                    recordBtn.style.background = 'var(--danger)';
+                    addLog('✅ 录像已停止并保存');
                 } catch (err) {
                     addLog(`⚠️ 停止录像出错: ${err.message}`);
                 }
             }
-            */
         }
 
       function cmd() {

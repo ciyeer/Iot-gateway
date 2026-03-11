@@ -19,4 +19,3 @@ struct DeviceStatus {
 }  // namespace device
 }  // namespace core
 }  // namespace iotgw
-

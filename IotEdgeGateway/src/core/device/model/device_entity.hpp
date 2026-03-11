@@ -23,4 +23,3 @@ struct DeviceEntity {
 }  // namespace device
 }  // namespace core
 }  // namespace iotgw
-

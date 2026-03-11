@@ -22,4 +22,3 @@ void ZigbeeAdapter::Stop() {}
 }  // namespace device
 }  // namespace core
 }  // namespace iotgw
-

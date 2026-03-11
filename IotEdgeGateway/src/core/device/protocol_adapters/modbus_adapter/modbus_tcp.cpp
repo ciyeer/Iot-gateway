@@ -8,8 +8,7 @@ namespace device {
 namespace protocol_adapters {
 namespace modbus {
 
-ModbusTcpAdapter::ModbusTcpAdapter(Options opt,
-                                   std::shared_ptr<iotgw::core::common::log::Logger> logger)
+ModbusTcpAdapter::ModbusTcpAdapter(Options opt, std::shared_ptr<iotgw::core::common::log::Logger> logger)
     : opt_(std::move(opt)), logger_(std::move(logger)) {}
 
 std::string ModbusTcpAdapter::Name() const { return "modbus_tcp"; }
@@ -23,4 +22,3 @@ void ModbusTcpAdapter::Stop() {}
 }  // namespace device
 }  // namespace core
 }  // namespace iotgw
-

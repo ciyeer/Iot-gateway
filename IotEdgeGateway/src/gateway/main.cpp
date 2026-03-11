@@ -19,19 +19,15 @@ iotgw::gateway::Args ParseArgs(int argc, char** argv) {
         if (a == "--yaml-config") {
             std::string v;
             if (TakeValue(i, argc, argv, v)) out.config_yaml = v;
-        } 
-        else if (a == "--log-file") {
+        } else if (a == "--log-file") {
             std::string v;
             if (TakeValue(i, argc, argv, v)) out.log_file = v;
-        } 
-        else if (a == "--log-level") {
+        } else if (a == "--log-level") {
             std::string v;
             if (TakeValue(i, argc, argv, v)) out.log_level = v;
-        } 
-        else if (a == "--print-version") {
+        } else if (a == "--print-version") {
             out.print_version = true;
-        } 
-        else if (a == "--set-version") {
+        } else if (a == "--set-version") {
             std::string v;
             if (TakeValue(i, argc, argv, v)) {
                 out.has_set_version = true;
