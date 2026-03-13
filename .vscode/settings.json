@@ -21,7 +21,10 @@
 	"cmake.configureOnOpen": true,
 	"files.associations": {
 		"utility": "cpp",
-		"vector": "cpp"
+		"vector": "cpp",
+		"__config": "cpp",
+		"iostream": "cpp",
+		"memory": "cpp"
 	},
 	"C_Cpp.default.compileCommands": "${workspaceFolder}/build/aarch64/debug/compile_commands.json",
 	"C_Cpp.default.includePath": [
