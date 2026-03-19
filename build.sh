@@ -168,7 +168,7 @@ echo "==========================================================================
 
 if [ "$DO_PACKAGE" -eq 1 ]; then
     echo "Warning: Native packaging via build.sh is deprecated for cross-compilation."
-    echo "Please use tools/docker/run_docker_build.sh for full release packaging."
+    echo "Please use scripts/docker/run_docker_build.sh for full release packaging."
     echo ""
     echo "Running simple local packaging for testing..."
 

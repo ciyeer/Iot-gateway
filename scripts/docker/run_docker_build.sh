@@ -85,7 +85,7 @@ echo '--- [1/3] Configuring CMake ---'
 cmake -S IotEdgeGateway -B "${BUILD_DIR}" \
     -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_TOOLCHAIN_FILE="${PROJECT_ROOT}/tools/docker/toolchain-aarch64.cmake"
+    -DCMAKE_TOOLCHAIN_FILE="${PROJECT_ROOT}/scripts/docker/toolchain-aarch64.cmake"
 
 # 2. 编译 & Strip
 echo '--- [2/3] Building & Stripping ---'
