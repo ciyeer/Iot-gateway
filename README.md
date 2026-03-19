@@ -92,7 +92,7 @@ Iot-gateway/
 │   ├── config/           # 配置文件 (yaml)
 │   ├── docs/             # 项目文档
 │   └── www/              # 静态 Web 资源
-├── tools/                # 开发工具与环境
+├── scripts/              # 开发工具与环境
 │   └── docker/           # 交叉编译 Docker 环境
 ├── build.sh              # 统一构建脚本入口
 ├── LICENSE
@@ -108,7 +108,7 @@ Iot-gateway/
 本项目提供了一个便捷的根目录 `build.sh` 统一构建脚本入口，用于统一管理不同架构和配置的构建过程。
 
 > **注意**：如果您在 macOS 上构建 ARM64 版本（用于 RK3568），需要安装 **Docker Desktop** 以使用交叉编译环境。
-> 请使用专用脚本：`./tools/docker/run_docker_build.sh`
+> 请使用专用脚本：`./scripts/docker/run_docker_build.sh`
 
 **基本用法：**
 
