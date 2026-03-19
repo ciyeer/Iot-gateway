@@ -22,7 +22,7 @@
 - **进程管理**：修复 `deploy_to_board.sh` 使用 `nohup` 后 SSH 退出导致子进程被杀的问题，改用完全重定向 (`> logs/nohup.out 2>&1 < /dev/null`) 配合子 Shell 执行。
 
 ### Changed
-- **部署体验优化**：重构 `tools/deploy_to_board.sh`：
+- **部署体验优化**：重构 `scripts/docker/deploy_to_board.sh`：
   - **SSH Multiplexing**：引入 ControlMaster 机制，实现单次输入密码后全程免密连接（复用 Socket）。
   - **自动寻包**：支持不传文件名自动查找 `build/` 目录下最新的 `.tar.gz` 包。
   - **脚本传输**：改用 Heredoc (`ssh <<'EOF'`) 方式传递远程命令，避免本地/远程变量混淆和引号转义地狱。
@@ -54,7 +54,7 @@
   - `Dockerfile`: 构建包含 `aarch64-linux-gnu-g++` 和 `cmake` 的编译镜像（已优化为阿里云源）。
   - `toolchain-aarch64.cmake`: 定义 CMake 交叉编译工具链配置。
   - `run_docker_build.sh`: 增加自动打包逻辑，生成 `iotgw-<commit>-v<version>.tar.gz`。
-  - `tools/deploy_to_board.sh`: 新增一键发布脚本（SCP + SSH 远程重启）。
+  - `scripts/docker/deploy_to_board.sh`: 新增一键发布脚本（SCP + SSH 远程重启）。
   - `.github/workflows/build.yml`: 新增 GitHub Actions 自动交叉编译配置。
 - **构建优化**：
   - **自动 Strip**：集成到 CMake POST_BUILD 阶段，自动去除符号表，大幅减小 Release 二进制体积。
